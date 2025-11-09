@@ -3,5 +3,10 @@
 # Track all PNG icons with LFS
 public/assets/icons/*.png filter=lfs diff=lfs merge=lfs -text
 
-# Track large data files
-*.json filter=lfs diff=lfs merge=lfs -text
+# Track large data files (but NOT package.json or package-lock.json)
+public/data/*.json filter=lfs diff=lfs merge=lfs -text
+
+# Explicitly exclude package files from LFS
+package.json !filter !diff !merge
+package-lock.json !filter !diff !merge
+tsconfig.json !filter !diff !merge

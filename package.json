@@ -1,3 +1,35 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4dfb0a6a6130d80214ddf29871f8e47a8bde1f896983c3498a5a179d38bb72d6
-size 830
+{
+  "name": "arc-raiders-loot-list",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Interactive loot decision tool for Arc Raiders - quickly determine what to keep, recycle, or sell",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "fetch-data": "tsx scripts/fetch-data.ts",
+    "validate-data": "tsx scripts/validate-data.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fuse.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  },
+  "keywords": [
+    "arc-raiders",
+    "loot",
+    "guide",
+    "cheat-sheet",
+    "recycling"
+  ],
+  "author": "",
+  "license": "MIT",
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.53.1"
+  }
+}
