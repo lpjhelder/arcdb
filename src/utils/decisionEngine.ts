@@ -139,9 +139,20 @@ export class DecisionEngine {
       }
 
       // Check if item is in quest requirements
-      const isRequired = quest.requirements.some(
-        req => req.itemId === item.id
-      );
+      let isRequired = false;
+
+      if (quest.requirements && quest.requirements.length > 0) {
+        isRequired = quest.requirements.some(
+          req => req.itemId === item.id
+        );
+      }
+
+      // Also check rewardItemIds (the actual data structure uses this)
+      if (!isRequired && quest.rewardItemIds && quest.rewardItemIds.length > 0) {
+        isRequired = quest.rewardItemIds.some(
+          reward => reward.itemId === item.id
+        );
+      }
 
       if (isRequired) {
         questNames.push(quest.name['en'] || quest.name[Object.keys(quest.name)[0]]);
@@ -169,10 +180,26 @@ export class DecisionEngine {
         continue;
       }
 
-      // Check if item is in project requirements
-      const isRequired = project.requirements.some(
-        req => req.itemId === item.id
-      );
+      let isRequired = false;
+
+      // Check legacy requirements format
+      if (project.requirements && project.requirements.length > 0) {
+        isRequired = project.requirements.some(
+          req => req.itemId === item.id
+        );
+      }
+
+      // Check phases format (actual data structure)
+      if (!isRequired && project.phases && project.phases.length > 0) {
+        for (const phase of project.phases) {
+          if (phase.requirementItemIds && phase.requirementItemIds.length > 0) {
+            if (phase.requirementItemIds.some(req => req.itemId === item.id)) {
+              isRequired = true;
+              break;
+            }
+          }
+        }
+      }
 
       if (isRequired) {
         projectNames.push(project.name['en'] || project.name[Object.keys(project.name)[0]]);
@@ -202,10 +229,20 @@ export class DecisionEngine {
         continue;
       }
 
+      // Check if module has levels
+      if (!module.levels || module.levels.length === 0) {
+        continue;
+      }
+
       // Check upcoming levels for this item
       for (const levelData of module.levels) {
         if (levelData.level <= currentLevel) {
           continue; // Already completed this level
+        }
+
+        // Check if this level has requirements
+        if (!levelData.requirementItemIds || levelData.requirementItemIds.length === 0) {
+          continue;
         }
 
         const isRequired = levelData.requirementItemIds.some(
