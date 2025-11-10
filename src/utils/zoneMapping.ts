@@ -97,11 +97,11 @@ export const ZONE_INFO: Record<ZoneType, ZoneInfo> = {
   },
   Raider: {
     name: 'Raider',
-    displayName: 'Raider',
-    description: 'Looted from Raider enemies',
+    displayName: 'Raider Camps',
+    description: 'Found in Raider camps and stashes',
     maps: ['All Maps'],
     color: '#dc2626',
-    category: 'enemy',
+    category: 'environment',
   },
   Residential: {
     name: 'Residential',
