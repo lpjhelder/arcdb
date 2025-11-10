@@ -27,7 +27,19 @@ export class DecisionEngine {
    * Main decision logic - determines if player should keep, recycle, or sell an item
    */
   getDecision(item: Item, userProgress: UserProgress): DecisionReason {
-    // Priority 0: Blueprints - ALWAYS REVIEW
+    // Priority 0: Legendaries - ALWAYS KEEP
+    if (item.rarity?.toLowerCase() === 'legendary') {
+      return {
+        decision: 'keep',
+        confidence: 100,
+        reasons: [
+          'Legendary rarity - extremely valuable',
+          'Keep all legendaries'
+        ]
+      };
+    }
+
+    // Priority 1: Blueprints - ALWAYS REVIEW
     if (item.type === 'Blueprint') {
       return {
         decision: 'situational',
@@ -39,7 +51,7 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 1: All weapons - ALWAYS REVIEW
+    // Priority 2: All weapons - ALWAYS REVIEW
     if (item.type === 'Weapon' || WeaponGrouper.isWeaponVariant(item)) {
       return {
         decision: 'situational',
@@ -51,7 +63,19 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 2: Quick Use items (grenades, healing items, etc.) - ALWAYS REVIEW
+    // Priority 3: Ammunition - ALWAYS REVIEW
+    if (item.type === 'Ammunition') {
+      return {
+        decision: 'situational',
+        confidence: 90,
+        reasons: [
+          'Ammunition - essential for weapons',
+          'Review based on your weapon loadout'
+        ]
+      };
+    }
+
+    // Priority 4: Quick Use items (grenades, healing items, etc.) - ALWAYS REVIEW
     if (item.type === 'Quick Use') {
       return {
         decision: 'situational',
@@ -140,8 +164,8 @@ export class DecisionEngine {
       }
     }
 
-    // Priority 9: Rare/Epic/Legendary items (SITUATIONAL - player decision)
-    if (item.rarity && ['rare', 'epic', 'legendary'].includes(item.rarity)) {
+    // Priority 9: Rare/Epic items (SITUATIONAL - player decision)
+    if (item.rarity && ['rare', 'epic'].includes(item.rarity.toLowerCase())) {
       return {
         decision: 'situational',
         confidence: 60,
