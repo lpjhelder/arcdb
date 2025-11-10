@@ -121,7 +121,7 @@ export class ItemCard {
   private getDecisionLabel(decision: RecycleDecision): string {
     const labels: Record<RecycleDecision, string> = {
       keep: 'KEEP',
-      sell_or_recycle: 'SELL/RECYCLE',
+      sell_or_recycle: 'SAFE TO SELL',
       situational: 'REVIEW'
     };
     return labels[decision] || 'UNKNOWN';
