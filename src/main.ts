@@ -288,7 +288,7 @@ class App {
     // Rarity filter
     if (this.filters.rarities.size > 0) {
       items = items.filter(item =>
-        item.rarity && this.filters.rarities.has(item.rarity)
+        item.rarity && this.filters.rarities.has(item.rarity.toLowerCase())
       );
     }
 
