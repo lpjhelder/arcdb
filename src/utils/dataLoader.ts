@@ -15,6 +15,21 @@ export interface GameData {
   };
 }
 
+interface PriceOverride {
+  value: number;
+  source: string;
+  confidence: string;
+}
+
+interface PriceOverrides {
+  metadata: {
+    version: string;
+    lastUpdated: string;
+    description: string;
+  };
+  overrides: Record<string, PriceOverride>;
+}
+
 export class DataLoader {
   private static instance: DataLoader;
   private dataCache: GameData | null = null;
@@ -50,16 +65,20 @@ export class DataLoader {
     }
 
     try {
-      const [items, hideoutModules, quests, projects, metadata] = await Promise.all([
+      const [items, hideoutModules, quests, projects, metadata, priceOverrides] = await Promise.all([
         this.fetchJSON<Item[]>(this.getPath('data/items.json')),
         this.fetchJSON<HideoutModule[]>(this.getPath('data/hideoutModules.json')),
         this.fetchJSON<Quest[]>(this.getPath('data/quests.json')),
         this.fetchJSON<Project[]>(this.getPath('data/projects.json')),
-        this.fetchJSON<any>(this.getPath('data/metadata.json'))
+        this.fetchJSON<any>(this.getPath('data/metadata.json')),
+        this.loadPriceOverrides()
       ]);
 
+      // Apply price overrides to items
+      const itemsWithOverrides = this.applyPriceOverrides(items, priceOverrides);
+
       this.dataCache = {
-        items,
+        items: itemsWithOverrides,
         hideoutModules,
         quests,
         projects,
@@ -71,6 +90,44 @@ export class DataLoader {
       console.error('Failed to load game data:', error);
       throw new Error('Failed to load game data. Please refresh the page.');
     }
+  }
+
+  /**
+   * Load price overrides from priceOverrides.json
+   */
+  private async loadPriceOverrides(): Promise<PriceOverrides | null> {
+    try {
+      return await this.fetchJSON<PriceOverrides>(this.getPath('data/priceOverrides.json'));
+    } catch (error) {
+      console.warn('Price overrides not found, using default values:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Apply price overrides to items
+   */
+  private applyPriceOverrides(items: Item[], priceOverrides: PriceOverrides | null): Item[] {
+    if (!priceOverrides) {
+      return items;
+    }
+
+    let appliedCount = 0;
+    const updatedItems = items.map(item => {
+      const override = priceOverrides.overrides[item.id];
+      if (override) {
+        appliedCount++;
+        return {
+          ...item,
+          value: override.value,
+          _note: `Price override: ${override.source} (confidence: ${override.confidence})`
+        };
+      }
+      return item;
+    });
+
+    console.log(`Applied ${appliedCount} price overrides from ${priceOverrides.metadata.lastUpdated}`);
+    return updatedItems;
   }
 
   /**
