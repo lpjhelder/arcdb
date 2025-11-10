@@ -148,14 +148,18 @@ export class DataLoader {
    */
   getIconUrl(item: Item): string {
     if (!item.imageFilename) {
-      return this.getPath('assets/icons/placeholder.png'); // Fallback
+      // Return transparent 1x1 pixel to avoid 404 errors
+      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"%3E%3C/svg%3E';
     }
 
     // Handle both URL and relative path formats
     if (item.imageFilename.startsWith('http')) {
       // Extract filename from URL
       const url = new URL(item.imageFilename);
-      const filename = url.pathname.split('/').pop() || 'placeholder.png';
+      const filename = url.pathname.split('/').pop();
+      if (!filename) {
+        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"%3E%3C/svg%3E';
+      }
       return this.getPath(`assets/icons/${filename}`);
     }
 

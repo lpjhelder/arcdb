@@ -87,7 +87,19 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 3: Quest items (ALWAYS KEEP)
+    // Priority 5: Keys - ALWAYS REVIEW
+    if (item.type === 'Key') {
+      return {
+        decision: 'situational',
+        confidence: 90,
+        reasons: [
+          'Key - opens locked areas and containers',
+          'Review based on areas you want to access'
+        ]
+      };
+    }
+
+    // Priority 7: Quest items (ALWAYS KEEP)
     const questUse = this.isUsedInActiveQuests(item, userProgress);
     if (questUse.isUsed) {
       return {
@@ -98,7 +110,7 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 4: Project items (KEEP if projects not completed)
+    // Priority 8: Project items (KEEP if projects not completed)
     const projectUse = this.isUsedInActiveProjects(item, userProgress);
     if (projectUse.isUsed) {
       return {
@@ -109,7 +121,7 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 5: Hideout upgrade materials (KEEP if needed)
+    // Priority 9: Hideout upgrade materials (KEEP if needed)
     const upgradeUse = this.isNeededForUpgrades(item, userProgress);
     if (upgradeUse.isNeeded) {
       return {
@@ -122,7 +134,7 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 6: Crafting materials (SITUATIONAL based on rarity and use)
+    // Priority 10: Crafting materials (SITUATIONAL based on rarity and use)
     if (item.recipe && item.recipe.length > 0) {
       const craftingValue = this.evaluateCraftingValue(item);
       if (craftingValue.isValuable) {
@@ -137,7 +149,7 @@ export class DecisionEngine {
       }
     }
 
-    // Priority 7: High value trinkets/items (SELL OR RECYCLE)
+    // Priority 11: High value trinkets/items (SELL OR RECYCLE)
     if (this.isHighValueTrinket(item)) {
       return {
         decision: 'sell_or_recycle',
@@ -149,7 +161,7 @@ export class DecisionEngine {
       };
     }
 
-    // Priority 8: Items that recycle into valuable materials (SELL OR RECYCLE)
+    // Priority 12: Items that recycle into valuable materials (SELL OR RECYCLE)
     if (item.recyclesInto && item.recyclesInto.length > 0) {
       const recycleValue = this.evaluateRecycleValue(item);
       if (recycleValue.isValuable) {
@@ -164,7 +176,7 @@ export class DecisionEngine {
       }
     }
 
-    // Priority 9: Rare/Epic items (SITUATIONAL - player decision)
+    // Priority 13: Rare/Epic items (SITUATIONAL - player decision)
     if (item.rarity && ['rare', 'epic'].includes(item.rarity.toLowerCase())) {
       return {
         decision: 'situational',

@@ -125,7 +125,7 @@ class App {
     const labels: Record<RecycleDecision, string> = {
       keep: 'Keep',
       sell_or_recycle: 'Safe to Sell',
-      situational: 'Review'
+      situational: 'Your Call'
     };
 
     decisions.forEach(decision => {

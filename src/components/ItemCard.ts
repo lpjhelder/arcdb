@@ -122,7 +122,7 @@ export class ItemCard {
     const labels: Record<RecycleDecision, string> = {
       keep: 'KEEP',
       sell_or_recycle: 'SAFE TO SELL',
-      situational: 'REVIEW'
+      situational: 'YOUR CALL'
     };
     return labels[decision] || 'UNKNOWN';
   }
