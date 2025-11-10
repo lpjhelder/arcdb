@@ -22,7 +22,7 @@ export class ItemCard {
     const { item, decisionData } = this.config;
 
     const card = document.createElement('div');
-    const rarityClass = item.rarity ? `rarity-${item.rarity}` : 'rarity-common';
+    const rarityClass = item.rarity ? `rarity-${item.rarity.toLowerCase()}` : 'rarity-common';
     card.className = `item-card ${rarityClass} decision-${decisionData.decision}`;
     card.dataset.itemId = item.id;
 
