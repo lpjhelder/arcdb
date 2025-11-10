@@ -56,9 +56,16 @@ async function resizeImage(filePath: string): Promise<boolean> {
   const tmpPath = filePath + '.tmp';
 
   try {
+    // Check if file is accessible first
+    try {
+      fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
+    } catch (accessError) {
+      console.warn(`  ⚠️  Cannot access file ${path.basename(filePath)} - may be git-LFS placeholder`);
+      return false;
+    }
+
     // Read the original image
-    let image = sharp(filePath);
-    const metadata = await image.metadata();
+    const metadata = await sharp(filePath).metadata();
 
     if (!metadata.width || !metadata.height) {
       console.warn(`  ⚠️  Cannot read dimensions for ${path.basename(filePath)}`);
@@ -145,15 +152,32 @@ async function resizeImage(filePath: string): Promise<boolean> {
       return false;
     }
 
-    // Replace original with resized version
-    fs.unlinkSync(filePath);
-    fs.renameSync(tmpPath, filePath);
-    return true;
+    // Replace original with resized version - retry with delay if locked
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        fs.unlinkSync(filePath);
+        fs.renameSync(tmpPath, filePath);
+        return true;
+      } catch (unlinkError: any) {
+        if (unlinkError.code === 'EBUSY' && retries > 1) {
+          // Wait a bit and retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries--;
+        } else {
+          throw unlinkError;
+        }
+      }
+    }
+
+    return false;
 
   } catch (error) {
     // Clean up tmp file if it exists
     if (fs.existsSync(tmpPath)) {
-      fs.unlinkSync(tmpPath);
+      try {
+        fs.unlinkSync(tmpPath);
+      } catch {}
     }
     console.warn(`  ⚠️  Resize error for ${path.basename(filePath)}: ${error}`);
     return false;
