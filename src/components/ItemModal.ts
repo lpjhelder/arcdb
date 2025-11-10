@@ -1,10 +1,12 @@
 import type { Item, DecisionReason } from '../types/Item';
 import { dataLoader } from '../utils/dataLoader';
 import { getMapRecommendations, getZoneInfo } from '../utils/zoneMapping';
+import type { DecisionEngine } from '../utils/decisionEngine';
 
 export interface ItemModalConfig {
   item: Item;
   decisionData: DecisionReason;
+  decisionEngine: DecisionEngine;
   onClose: () => void;
 }
 
@@ -31,6 +33,17 @@ export class ItemModal {
 
     closeBtn?.addEventListener('click', () => this.hide());
     overlay?.addEventListener('click', () => this.hide());
+
+    // Add click handlers for clickable items in recipes
+    const clickableItems = content.querySelectorAll('[data-item-id]');
+    clickableItems.forEach(element => {
+      element.addEventListener('click', (e) => {
+        const itemId = (e.currentTarget as HTMLElement).getAttribute('data-item-id');
+        if (itemId) {
+          this.navigateToItem(itemId);
+        }
+      });
+    });
 
     // Show modal
     modal.classList.add('active');
@@ -120,28 +133,11 @@ export class ItemModal {
               </dl>
             </div>
 
-            ${item.recyclesInto && item.recyclesInto.length > 0 ? `
-              <div class="item-modal__section">
-                <h3>Recycles Into</h3>
-                <ul class="recycle-list">
-                  ${item.recyclesInto.map(output => `
-                    <li>${output.quantity}x ${output.itemId}</li>
-                  `).join('')}
-                </ul>
-              </div>
-            ` : ''}
+            ${this.renderRecyclesInto(item)}
 
-            ${item.recipe && item.recipe.length > 0 ? `
-              <div class="item-modal__section">
-                <h3>Crafting Recipe</h3>
-                <ul class="recipe-list">
-                  ${item.recipe.map(ingredient => `
-                    <li>${ingredient.quantity}x ${ingredient.itemId}</li>
-                  `).join('')}
-                </ul>
-                ${item.craftBench ? `<p class="craft-bench">Requires: ${item.craftBench}</p>` : ''}
-              </div>
-            ` : ''}
+            ${this.renderCraftingRecipe(item)}
+
+            ${this.renderUsedToCraft(item)}
 
             ${Array.isArray(item.foundIn) && item.foundIn.length > 0 ? `
               <div class="item-modal__section">
@@ -222,5 +218,148 @@ export class ItemModal {
       situational: 'REVIEW'
     };
     return labels[decision] || decision.toUpperCase();
+  }
+
+  private renderRecyclesInto(item: Item): string {
+    const isBlueprint = item.type.toLowerCase().includes('blueprint');
+    if (isBlueprint || !item.recyclesInto || Object.keys(item.recyclesInto).length === 0) {
+      return '';
+    }
+
+    const recycleItems = Object.entries(item.recyclesInto)
+      .map(([itemId, quantity]) => {
+        const outputItem = this.findItemByIdSimple(itemId);
+        const iconUrl = outputItem ? dataLoader.getIconUrl(outputItem) : '';
+        const itemName = outputItem?.name?.['en'] || itemId;
+        const rarity = (outputItem?.rarity || 'common').toLowerCase();
+
+        return `
+          <div class="recipe-item" data-item-id="${itemId}" title="${itemName}">
+            <div class="recipe-item__icon recipe-item__icon--${rarity}">
+              <img src="${iconUrl}" alt="${itemName}" onerror="this.outerHTML='<div class=\\'recipe-item__placeholder\\'>?</div>'" />
+              <span class="recipe-item__quantity">${quantity}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div class="item-modal__section">
+        <h3>Recycles Into</h3>
+        <div class="recipe-grid">
+          ${recycleItems}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderCraftingRecipe(item: Item): string {
+    if (!item.recipe || Object.keys(item.recipe).length === 0) {
+      return '';
+    }
+
+    const recipeItems = Object.entries(item.recipe)
+      .map(([ingredientId, quantity]) => {
+        const ingredientItem = this.findItemByIdSimple(ingredientId);
+        const iconUrl = ingredientItem ? dataLoader.getIconUrl(ingredientItem) : '';
+        const itemName = ingredientItem?.name?.['en'] || ingredientId;
+        const rarity = (ingredientItem?.rarity || 'common').toLowerCase();
+
+        return `
+          <div class="recipe-item" data-item-id="${ingredientId}" title="${itemName}">
+            <div class="recipe-item__icon recipe-item__icon--${rarity}">
+              <img src="${iconUrl}" alt="${itemName}" onerror="this.outerHTML='<div class=\\'recipe-item__placeholder\\'>?</div>'" />
+              <span class="recipe-item__quantity">${quantity}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div class="item-modal__section">
+        <h3>Crafting Recipe</h3>
+        <p class="recipe-description">Ingredients needed to craft this item:</p>
+        <div class="recipe-grid">
+          ${recipeItems}
+        </div>
+        ${item.craftBench ? `<p class="craft-bench">Requires: ${item.craftBench}</p>` : ''}
+      </div>
+    `;
+  }
+
+  private renderUsedToCraft(item: Item): string {
+    const usedInItems = this.config.decisionEngine.getItemsUsingIngredient(item.id);
+
+    if (usedInItems.length === 0) {
+      return '';
+    }
+
+    const itemsList = usedInItems
+      .map(craftableItem => {
+        const name = craftableItem.name?.['en'] || craftableItem.name?.[Object.keys(craftableItem.name || {})[0]] || craftableItem.id;
+        const quantity = craftableItem.recipe?.[item.id] || 0;
+        const iconUrl = dataLoader.getIconUrl(craftableItem);
+        const rarity = (craftableItem.rarity || 'common').toLowerCase();
+
+        return `
+          <div class="recipe-item" data-item-id="${craftableItem.id}" title="${name}">
+            <div class="recipe-item__icon recipe-item__icon--${rarity}">
+              <img src="${iconUrl}" alt="${name}" onerror="this.outerHTML='<div class=\\'recipe-item__placeholder\\'>?</div>'" />
+              <span class="recipe-item__quantity">${quantity}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div class="item-modal__section">
+        <h3>Used to Craft</h3>
+        <p class="recipe-description">This item is used as an ingredient in ${usedInItems.length} recipe${usedInItems.length > 1 ? 's' : ''}:</p>
+        <div class="recipe-grid">
+          ${itemsList}
+        </div>
+      </div>
+    `;
+  }
+
+  private findItemById(itemId: string): (Item & { decisionData: DecisionReason }) | undefined {
+    const items = this.config.decisionEngine.getItemsWithDecisions({
+      completedQuests: [],
+      completedProjects: [],
+      hideoutLevels: {},
+      lastUpdated: Date.now()
+    });
+    return items.find(i => i.id === itemId);
+  }
+
+  private findItemByIdSimple(itemId: string): Item | undefined {
+    const itemWithDecision = this.findItemById(itemId);
+    if (!itemWithDecision) return undefined;
+
+    // Return a plain Item without the decisionData property
+    const { decisionData, ...item } = itemWithDecision;
+    return item as Item;
+  }
+
+  private navigateToItem(itemId: string): void {
+    // Close current modal
+    this.hide();
+
+    // Find and show the new item
+    const targetItem = this.findItemById(itemId);
+    if (!targetItem) return;
+
+    // Show new modal with the target item
+    const newModal = new ItemModal({
+      item: targetItem,
+      decisionData: targetItem.decisionData,
+      decisionEngine: this.config.decisionEngine,
+      onClose: () => {}
+    });
+
+    newModal.show();
   }
 }

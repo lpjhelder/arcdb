@@ -4,12 +4,14 @@ import type { HideoutModule } from '../types/HideoutModule';
 import type { Quest } from '../types/Quest';
 import type { Project } from '../types/Project';
 import { WeaponGrouper } from './weaponGrouping';
+import { buildReverseRecipeIndex } from './recipeUtils';
 
 export class DecisionEngine {
   private items: Map<string, Item>;
   private hideoutModules: HideoutModule[];
   private quests: Quest[];
   private projects: Project[];
+  private reverseRecipeIndex: Map<string, string[]>;
 
   constructor(
     items: Item[],
@@ -21,6 +23,7 @@ export class DecisionEngine {
     this.hideoutModules = hideoutModules;
     this.quests = quests;
     this.projects = projects;
+    this.reverseRecipeIndex = buildReverseRecipeIndex(items);
   }
 
   /**
@@ -137,17 +140,15 @@ export class DecisionEngine {
     }
 
     // Priority 10: Crafting materials (SITUATIONAL based on rarity and use)
-    if (item.recipe && item.recipe.length > 0) {
-      const craftingValue = this.evaluateCraftingValue(item);
-      if (craftingValue.isValuable) {
-        return {
-          decision: 'situational',
-          reasons: [
-            `Used in ${craftingValue.recipeCount} crafting recipes`,
-            craftingValue.details
-          ]
-        };
-      }
+    const craftingValue = this.evaluateCraftingValue(item);
+    if (craftingValue.isValuable) {
+      return {
+        decision: 'situational',
+        reasons: [
+          `Used in ${craftingValue.recipeCount} crafting recipes`,
+          craftingValue.details
+        ]
+      };
     }
 
     // Priority 11: High value trinkets/items (SELL OR RECYCLE)
@@ -162,7 +163,7 @@ export class DecisionEngine {
     }
 
     // Priority 12: Items that recycle into valuable materials (SELL OR RECYCLE)
-    if (item.recyclesInto && item.recyclesInto.length > 0) {
+    if (item.recyclesInto && Object.keys(item.recyclesInto).length > 0) {
       const recycleValue = this.evaluateRecycleValue(item);
       if (recycleValue.isValuable) {
         return {
@@ -333,14 +334,15 @@ export class DecisionEngine {
   }
 
   /**
-   * Evaluate if item has high crafting value
+   * Evaluate if item has high crafting value (used as ingredient in other recipes)
    */
   private evaluateCraftingValue(item: Item): {
     isValuable: boolean;
     recipeCount: number;
     details: string;
   } {
-    const recipeCount = item.recipe?.length || 0;
+    // Check how many items use THIS item as an ingredient
+    const recipeCount = this.reverseRecipeIndex.get(item.id)?.length || 0;
     const isRare = item.rarity ? ['rare', 'epic', 'legendary'].includes(item.rarity) : false;
 
     return {
@@ -359,8 +361,8 @@ export class DecisionEngine {
     const highValueThreshold = 1000;
     const trinketKeywords = ['trinket', 'misc', 'collectible'];
 
-    const hasNoRecipe = !item.recipe || item.recipe.length === 0;
-    const hasNoRecycle = !item.recyclesInto || item.recyclesInto.length === 0;
+    const hasNoRecipe = !item.recipe || Object.keys(item.recipe).length === 0;
+    const hasNoRecycle = !item.recyclesInto || Object.keys(item.recyclesInto).length === 0;
     const isTrinket = trinketKeywords.some(keyword =>
       item.type.toLowerCase().includes(keyword)
     );
@@ -376,7 +378,7 @@ export class DecisionEngine {
     description: string;
     estimatedValue: number;
   } {
-    if (!item.recyclesInto || item.recyclesInto.length === 0) {
+    if (!item.recyclesInto || Object.keys(item.recyclesInto).length === 0) {
       return {
         isValuable: false,
         description: 'Nothing',
@@ -387,11 +389,11 @@ export class DecisionEngine {
     const materials: string[] = [];
     let totalValue = 0;
 
-    for (const output of item.recyclesInto) {
-      const outputItem = this.items.get(output.itemId);
+    for (const [itemId, quantity] of Object.entries(item.recyclesInto)) {
+      const outputItem = this.items.get(itemId);
       if (outputItem) {
-        materials.push(`${output.quantity}x ${this.getItemName(outputItem)}`);
-        totalValue += outputItem.value * output.quantity;
+        materials.push(`${quantity}x ${this.getItemName(outputItem)}`);
+        totalValue += outputItem.value * quantity;
       }
     }
 
@@ -446,5 +448,15 @@ export class DecisionEngine {
     }
 
     return stats;
+  }
+
+  /**
+   * Get items that use this item as an ingredient in their recipes
+   */
+  getItemsUsingIngredient(itemId: string): Item[] {
+    const itemIds = this.reverseRecipeIndex.get(itemId) || [];
+    return itemIds
+      .map(id => this.items.get(id))
+      .filter((item): item is Item => item !== undefined);
   }
 }

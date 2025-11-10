@@ -16,16 +16,6 @@ export type ItemCategory =
   | 'quest_item'
   | 'misc';
 
-export interface RecycleOutput {
-  itemId: string;
-  quantity: number;
-}
-
-export interface CraftRecipe {
-  itemId: string;
-  quantity: number;
-}
-
 export interface ItemEffect {
   label: Record<string, string>; // language code -> label
   value: string | number;
@@ -40,9 +30,9 @@ export interface Item {
   value: number; // Coin value
   weightKg: number;
   stackSize: number;
-  recyclesInto?: RecycleOutput[];
-  salvagesInto?: RecycleOutput[];
-  recipe?: CraftRecipe[];
+  recyclesInto?: Record<string, number>; // itemId -> quantity
+  salvagesInto?: Record<string, number>; // itemId -> quantity
+  recipe?: Record<string, number>; // ingredientId -> quantity
   craftBench?: string;
   effects?: ItemEffect[];
   foundIn?: string[];

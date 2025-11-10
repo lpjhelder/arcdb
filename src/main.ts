@@ -494,6 +494,7 @@ class App {
     const modal = new ItemModal({
       item,
       decisionData: itemWithDecision.decisionData,
+      decisionEngine: this.decisionEngine,
       onClose: () => {}
     });
 
