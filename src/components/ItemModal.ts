@@ -1,5 +1,6 @@
 import type { Item, DecisionReason } from '../types/Item';
 import { dataLoader } from '../utils/dataLoader';
+import { getMapRecommendations, getZoneInfo } from '../utils/zoneMapping';
 
 export interface ItemModalConfig {
   item: Item;
@@ -144,10 +145,19 @@ export class ItemModal {
 
             ${Array.isArray(item.foundIn) && item.foundIn.length > 0 ? `
               <div class="item-modal__section">
-                <h3>Found In</h3>
-                <ul class="location-list">
-                  ${item.foundIn.map(location => `<li>${location}</li>`).join('')}
-                </ul>
+                <h3>Location & Maps</h3>
+
+                <div class="location-zones">
+                  <h4>Found In:</h4>
+                  <div class="zone-badges">
+                    ${item.foundIn.map(location => {
+                      const zoneInfo = getZoneInfo(location);
+                      return `<span class="zone-badge" style="--zone-color: ${zoneInfo?.color || '#6b7280'}" title="${zoneInfo?.description || location}">${location}</span>`;
+                    }).join('')}
+                  </div>
+                </div>
+
+                ${this.renderMapRecommendations(item.foundIn)}
               </div>
             ` : ''}
           </div>
@@ -159,6 +169,48 @@ export class ItemModal {
             </div>
           ` : ''}
         </div>
+      </div>
+    `;
+  }
+
+  private renderMapRecommendations(zones: string[]): string {
+    const maps = getMapRecommendations(zones);
+
+    if (maps.length === 0) {
+      return '';
+    }
+
+    // Handle special cases
+    if (maps.includes('Hideout')) {
+      return `
+        <div class="map-recommendations">
+          <h4>Available At:</h4>
+          <div class="map-badges">
+            <span class="map-badge map-badge--vendor">Hideout Vendor</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (maps.includes('All Maps')) {
+      return `
+        <div class="map-recommendations">
+          <h4>Check Maps:</h4>
+          <div class="map-badges">
+            <span class="map-badge map-badge--all">All Raid Maps</span>
+          </div>
+          <p class="map-hint">Can be looted from enemies on any map</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="map-recommendations">
+        <h4>Check Maps:</h4>
+        <div class="map-badges">
+          ${maps.map(map => `<span class="map-badge">${map}</span>`).join('')}
+        </div>
+        <p class="map-hint">Look for ${zones.join(', ')} zones on these maps</p>
       </div>
     `;
   }

@@ -8,6 +8,7 @@ import type { UserProgress } from './types/UserProgress';
 import type { Item, RecycleDecision } from './types/Item';
 import { ItemCard } from './components/ItemCard';
 import { ItemModal } from './components/ItemModal';
+import { ZoneFilter } from './components/ZoneFilter';
 
 class App {
   private gameData!: GameData;
@@ -16,6 +17,7 @@ class App {
   private userProgress: UserProgress;
   private allItems: SearchableItem[] = [];
   private filteredItems: SearchableItem[] = [];
+  private zoneFilter!: ZoneFilter;
 
   private searchInput!: HTMLInputElement;
   private itemsGrid!: HTMLElement;
@@ -25,6 +27,7 @@ class App {
     decisions: new Set<RecycleDecision>(),
     rarities: new Set<string>(),
     category: '',
+    zones: [] as string[],
     groupWeapons: true,
     sortBy: 'name' as 'name' | 'value' | 'rarity' | 'weight' | 'decision',
     sortDirection: 'asc' as 'asc' | 'desc'
@@ -115,6 +118,9 @@ class App {
 
     // Initialize workshop tracker
     this.initializeWorkshopTracker();
+
+    // Initialize zone filter
+    this.initializeZoneFilter();
   }
 
   private initializeDecisionFilters() {
@@ -348,6 +354,44 @@ class App {
     this.updateStats();
   }
 
+  private initializeZoneFilter() {
+    this.zoneFilter = new ZoneFilter({
+      items: this.allItems,
+      selectedZones: this.filters.zones,
+      onZoneSelect: (zones: string[]) => {
+        this.filters.zones = zones;
+        this.applyFilters();
+      }
+    });
+
+    // Mount to main content area
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      this.zoneFilter.mount(mainContent);
+    }
+
+    // Add toggle button to header
+    const viewToggle = document.querySelector('.view-toggle');
+    if (viewToggle) {
+      const zoneToggleBtn = document.createElement('button');
+      zoneToggleBtn.className = 'toggle-btn';
+      zoneToggleBtn.dataset.view = 'zones';
+      zoneToggleBtn.innerHTML = '🗺️';
+      zoneToggleBtn.title = 'Zone Filter';
+
+      zoneToggleBtn.addEventListener('click', () => {
+        this.zoneFilter.toggle();
+
+        // Update button active state
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+          btn.classList.toggle('active', btn === zoneToggleBtn);
+        });
+      });
+
+      viewToggle.insertBefore(zoneToggleBtn, viewToggle.firstChild);
+    }
+  }
+
   private applyFilters() {
     let items = [...this.allItems];
 
@@ -375,6 +419,15 @@ class App {
       items = items.filter(item => item.type === this.filters.category);
     }
 
+    // Zone filter
+    if (this.filters.zones.length > 0) {
+      items = items.filter(item => {
+        if (!item.foundIn || item.foundIn.length === 0) return false;
+        // Item must be found in at least one of the selected zones
+        return item.foundIn.some(zone => this.filters.zones.includes(zone));
+      });
+    }
+
     // Weapon grouping - show only highest tier of each weapon
     if (this.filters.groupWeapons) {
       items = WeaponGrouper.filterToHighestTiers(items);
@@ -384,6 +437,12 @@ class App {
     items = this.sortItems(items);
 
     this.filteredItems = items;
+
+    // Update zone filter with current items (for count display)
+    if (this.zoneFilter) {
+      this.zoneFilter.updateItems(items);
+    }
+
     this.render();
   }
 

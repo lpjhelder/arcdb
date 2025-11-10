@@ -1455,3 +1455,301 @@ body {
   font-size: 1.5rem;
   z-index: 9999;
 }
+
+/* ========================================
+   Zone Filter & Location Components
+   ======================================== */
+
+.zone-filter {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.zone-filter__content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.zone-filter__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.zone-filter__header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.zone-filter__clear {
+  background: var(--color-accent-orange);
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.zone-filter__clear:hover {
+  opacity: 0.8;
+  transform: translateY(-2px);
+}
+
+.zone-filter__categories {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.zone-filter__category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.zone-filter__category-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.zone-filter__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* Zone Cards */
+.zone-card {
+  background: var(--color-bg-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.zone-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--zone-color, var(--color-text-muted));
+  opacity: 0.6;
+  transition: var(--transition-fast);
+}
+
+.zone-card:hover:not(:disabled) {
+  border-color: var(--zone-color);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.zone-card:hover::before {
+  opacity: 1;
+  width: 6px;
+}
+
+.zone-card--selected {
+  border-color: var(--zone-color);
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-elevated) 0%,
+    color-mix(in srgb, var(--zone-color) 10%, var(--color-bg-elevated)) 100%
+  );
+  box-shadow: 0 0 20px color-mix(in srgb, var(--zone-color) 20%, transparent);
+}
+
+.zone-card--selected::before {
+  opacity: 1;
+  width: 6px;
+}
+
+.zone-card--empty {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zone-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.zone-card__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.zone-card__count {
+  background: var(--zone-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.zone-card__description {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.4;
+}
+
+.zone-card__maps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.zone-card__map-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.zone-card__map-badge--all {
+  background: var(--color-accent-cyan);
+  color: white;
+}
+
+/* Zone Badges in Item Modal */
+.zone-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.zone-badge {
+  background: linear-gradient(
+    135deg,
+    var(--zone-color) 0%,
+    color-mix(in srgb, var(--zone-color) 70%, black) 100%
+  );
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--zone-color) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--zone-color) 40%, transparent);
+  transition: var(--transition-fast);
+}
+
+.zone-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--zone-color) 40%, transparent);
+}
+
+/* Location Section in Item Modal */
+.location-zones {
+  margin-bottom: var(--spacing-xl);
+}
+
+.location-zones h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+/* Map Recommendations */
+.map-recommendations {
+  background: rgba(0, 188, 212, 0.1);
+  border: 1px solid rgba(0, 188, 212, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.map-recommendations h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.map-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.map-badge {
+  background: var(--color-accent-cyan);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
+}
+
+.map-badge--vendor {
+  background: var(--color-accent-neon);
+  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.3);
+}
+
+.map-badge--all {
+  background: linear-gradient(135deg, var(--color-accent-cyan) 0%, var(--color-accent-neon) 100%);
+  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.4);
+}
+
+.map-hint {
+  margin: var(--spacing-md) 0 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .zone-filter__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .zone-filter {
+    padding: var(--spacing-lg);
+  }
+
+  .zone-badges,
+  .map-badges {
+    gap: var(--spacing-sm);
+  }
+
+  .zone-badge,
+  .map-badge {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+}

@@ -77,8 +77,11 @@ export class DataLoader {
       // Apply price overrides to items
       const itemsWithOverrides = this.applyPriceOverrides(items, priceOverrides);
 
+      // Normalize items data
+      const normalizedItems = this.normalizeItems(itemsWithOverrides);
+
       this.dataCache = {
-        items: itemsWithOverrides,
+        items: normalizedItems,
         hideoutModules,
         quests,
         projects,
@@ -128,6 +131,28 @@ export class DataLoader {
 
     console.log(`Applied ${appliedCount} price overrides from ${priceOverrides.metadata.lastUpdated}`);
     return updatedItems;
+  }
+
+  /**
+   * Normalize item data (e.g., parse foundIn strings into arrays)
+   */
+  private normalizeItems(items: Item[]): Item[] {
+    return items.map(item => {
+      // Parse foundIn from comma-separated string to array
+      if (item.foundIn) {
+        if (typeof item.foundIn === 'string') {
+          const foundInStr = item.foundIn as unknown as string;
+          return {
+            ...item,
+            foundIn: foundInStr
+              .split(',')
+              .map(loc => loc.trim())
+              .filter(loc => loc.length > 0)
+          };
+        }
+      }
+      return item;
+    });
   }
 
   /**
