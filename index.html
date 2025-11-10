@@ -24,42 +24,8 @@
     <main class="main">
       <div class="container">
         <div class="layout-wrapper">
-          <!-- Sidebar with Workshop Progress -->
+          <!-- Sidebar with Filters and Workshop Progress -->
           <aside class="sidebar">
-            <div class="workshop-tracker" id="workshop-tracker">
-              <h3 class="workshop-header">Hideout Progress</h3>
-              <div class="workshop-grid" id="workshop-grid"></div>
-            </div>
-          </aside>
-
-          <!-- Main Content Area -->
-          <div class="main-content">
-            <!-- Search and Sort Toolbar -->
-            <div class="toolbar">
-              <div class="toolbar-left">
-                <div class="sort-toolbar">
-                  <select id="sort-selector" class="sort-select">
-                    <option value="name">Name</option>
-                    <option value="value">Value</option>
-                    <option value="rarity">Rarity</option>
-                    <option value="weight">Weight</option>
-                    <option value="decision">Decision</option>
-                  </select>
-                  <button id="sort-direction-btn" class="sort-direction-btn" title="Sort ascending">↑</button>
-                </div>
-              </div>
-
-              <div class="toolbar-right">
-                <input
-                  type="search"
-                  id="search"
-                  placeholder="Search items..."
-                  class="search-input-main"
-                  autocomplete="off"
-                />
-              </div>
-            </div>
-
             <!-- Filters -->
             <div class="controls collapsible">
               <h3 class="collapsible-header" data-target="search-content">
@@ -92,6 +58,41 @@
                     </label>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Workshop Progress -->
+            <div class="workshop-tracker" id="workshop-tracker">
+              <h3 class="workshop-header">Hideout Progress</h3>
+              <div class="workshop-grid" id="workshop-grid"></div>
+            </div>
+          </aside>
+
+          <!-- Main Content Area -->
+          <div class="main-content">
+            <!-- Search and Sort Toolbar -->
+            <div class="toolbar">
+              <div class="toolbar-left">
+                <div class="sort-toolbar">
+                  <select id="sort-selector" class="sort-select">
+                    <option value="name">Name</option>
+                    <option value="value">Value</option>
+                    <option value="rarity">Rarity</option>
+                    <option value="weight">Weight</option>
+                    <option value="decision">Decision</option>
+                  </select>
+                  <button id="sort-direction-btn" class="sort-direction-btn" title="Sort ascending">↑</button>
+                </div>
+              </div>
+
+              <div class="toolbar-right">
+                <input
+                  type="search"
+                  id="search"
+                  placeholder="Search items..."
+                  class="search-input-main"
+                  autocomplete="off"
+                />
               </div>
             </div>
 

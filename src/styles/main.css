@@ -269,24 +269,26 @@ body {
 
 .search-input-main {
   width: 100%;
-  padding: 6px 12px;
+  padding: 8px 14px;
   background: var(--color-bg-dark);
-  border: 2px solid transparent;
+  border: 2px solid var(--color-accent-cyan);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-size: 0.875rem;
   font-family: inherit;
   transition: all var(--transition-base);
+  box-shadow: 0 0 8px rgba(0, 188, 212, 0.2);
 }
 
 .search-input-main:focus {
   outline: none;
   border-color: var(--color-accent-cyan);
-  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+  box-shadow: 0 0 12px rgba(0, 188, 212, 0.4);
+  background: var(--color-bg-elevated);
 }
 
 .search-input-main::placeholder {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* ========================================
@@ -492,6 +494,7 @@ body {
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid rgba(0, 188, 212, 0.2);
+  margin-top: var(--spacing-lg);
 }
 
 .workshop-header {
