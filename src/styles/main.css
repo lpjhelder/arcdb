@@ -795,7 +795,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: 0.15rem 0.25rem;
   background: var(--color-bg-elevated);
 }
 
@@ -856,7 +856,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xs);
+  padding: 0.2rem;
   background: linear-gradient(135deg, var(--color-bg-dark) 0%, var(--color-bg-elevated) 100%);
   position: relative;
   overflow: hidden;
@@ -889,24 +889,26 @@ body {
 }
 
 .item-card__content {
-  padding: var(--spacing-sm);
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .item-card__name {
   font-size: 0.75rem;
   font-weight: 700;
-  margin-bottom: var(--spacing-xs);
   color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .item-card__meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
   font-size: 0.65rem;
   color: var(--color-text-secondary);
 }
@@ -922,14 +924,14 @@ body {
 .decision-badge {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: 2px 4px;
+  gap: 0.15rem;
+  padding: 0.15rem 0.25rem;
   border-radius: var(--radius-sm);
   font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: var(--spacing-xs);
+  line-height: 1;
 }
 
 .decision-badge--keep {
