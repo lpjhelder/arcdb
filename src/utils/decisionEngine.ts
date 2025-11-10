@@ -27,171 +27,187 @@ export class DecisionEngine {
   }
 
   /**
+   * Finalize decision by checking if recycle value exceeds item value
+   */
+  private finalizeDecision(item: Item, decision: DecisionReason): DecisionReason {
+    // Check if recycle value exceeds item value
+    const recycleData = item.recyclesInto || item.salvagesInto || item.crafting;
+    if (recycleData && Object.keys(recycleData).length > 0) {
+      const recycleValue = this.evaluateRecycleValue(item);
+      if (recycleValue.estimatedValue > item.value) {
+        return { ...decision, recycleValueExceedsItem: true };
+      }
+    }
+    return decision;
+  }
+
+  /**
    * Main decision logic - determines if player should keep, recycle, or sell an item
    */
   getDecision(item: Item, userProgress: UserProgress): DecisionReason {
     // Priority 0: Seeds - ALWAYS KEEP (valuable currency)
     if (item.id === 'assorted_seeds') {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'keep',
         reasons: [
           'Valuable currency item',
           'Used for trading with Celeste'
         ]
-      };
+      });
     }
 
     // Priority 1: Legendaries - ALWAYS KEEP
     if (item.rarity?.toLowerCase() === 'legendary') {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'keep',
         reasons: [
           'Legendary rarity - extremely valuable',
           'Keep all legendaries'
         ]
-      };
+      });
     }
 
     // Priority 2: Blueprints - ALWAYS REVIEW
     if (item.type === 'Blueprint') {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           'Blueprint - valuable for unlocking crafting recipes',
           'Review carefully before selling or recycling'
         ]
-      };
+      });
     }
 
     // Priority 3: All weapons - ALWAYS REVIEW
     if (item.type === 'Weapon' || WeaponGrouper.isWeaponVariant(item)) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           'Weapon - review based on your current loadout',
           'Consider tier and your play style'
         ]
-      };
+      });
     }
 
     // Priority 4: Ammunition - ALWAYS REVIEW
     if (item.type === 'Ammunition') {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           'Ammunition - essential for weapons',
           'Review based on your weapon loadout'
         ]
-      };
+      });
     }
 
     // Priority 5: Quick Use items (grenades, healing items, etc.) - ALWAYS REVIEW
     if (item.type === 'Quick Use') {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           'Consumable item - grenades, healing items, etc.',
           'Review based on your current inventory needs'
         ]
-      };
+      });
     }
 
     // Priority 6: Keys - ALWAYS REVIEW
     if (item.type === 'Key') {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           'Key - opens locked areas and containers',
           'Review based on areas you want to access'
         ]
-      };
+      });
     }
 
     // Priority 7: Quest items (ALWAYS KEEP)
     const questUse = this.isUsedInActiveQuests(item, userProgress);
     if (questUse.isUsed) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'keep',
         reasons: [`Required for quest: ${questUse.questNames.join(', ')}`],
         dependencies: questUse.questNames
-      };
+      });
     }
 
     // Priority 8: Project items (KEEP if projects not completed)
     const projectUse = this.isUsedInActiveProjects(item, userProgress);
     if (projectUse.isUsed) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'keep',
         reasons: [`Needed for project: ${projectUse.projectNames.join(', ')}`],
         dependencies: projectUse.projectNames
-      };
+      });
     }
 
     // Priority 9: Hideout upgrade materials (KEEP if needed)
     const upgradeUse = this.isNeededForUpgrades(item, userProgress);
     if (upgradeUse.isNeeded) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'keep',
         reasons: [
           `Required for hideout upgrade: ${upgradeUse.moduleNames.join(', ')}`
         ],
         dependencies: upgradeUse.moduleNames
-      };
+      });
     }
 
     // Priority 10: Crafting materials (SITUATIONAL based on rarity and use)
     const craftingValue = this.evaluateCraftingValue(item);
     if (craftingValue.isValuable) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           `Used in ${craftingValue.recipeCount} crafting recipes`,
           craftingValue.details
         ]
-      };
+      });
     }
 
     // Priority 11: High value trinkets/items (SELL OR RECYCLE)
     if (this.isHighValueTrinket(item)) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'sell_or_recycle',
         reasons: [
           `High value (${item.value} coins)`,
           'No crafting or upgrade use'
         ]
-      };
+      });
     }
 
     // Priority 12: Items that recycle into valuable materials (SELL OR RECYCLE)
-    if (item.recyclesInto && Object.keys(item.recyclesInto).length > 0) {
+    const recycleData = item.recyclesInto || item.salvagesInto || item.crafting;
+    if (recycleData && Object.keys(recycleData).length > 0) {
       const recycleValue = this.evaluateRecycleValue(item);
       if (recycleValue.isValuable) {
-        return {
+        return this.finalizeDecision(item, {
           decision: 'sell_or_recycle',
           reasons: [
             `Recycles into: ${recycleValue.description}`,
-            `Total value: ${recycleValue.estimatedValue} coins`
+            `Recycle value: Components (${recycleValue.estimatedValue} coins) worth less than Item (${item.value} coins)`
           ]
-        };
+        });
       }
     }
 
     // Priority 13: Rare/Epic items (SITUATIONAL - player decision)
     if (item.rarity && ['rare', 'epic'].includes(item.rarity.toLowerCase())) {
-      return {
+      return this.finalizeDecision(item, {
         decision: 'situational',
         reasons: [
           `${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} rarity`,
           'May have future use - review carefully'
         ]
-      };
+      });
     }
 
     // Default: Safe to sell or recycle
-    return {
+    return this.finalizeDecision(item, {
       decision: 'sell_or_recycle',
       reasons: ['No immediate use found', 'Safe to sell or recycle']
-    };
+    });
   }
 
   /**
@@ -362,7 +378,8 @@ export class DecisionEngine {
     const trinketKeywords = ['trinket', 'misc', 'collectible'];
 
     const hasNoRecipe = !item.recipe || Object.keys(item.recipe).length === 0;
-    const hasNoRecycle = !item.recyclesInto || Object.keys(item.recyclesInto).length === 0;
+    const recycleData = item.recyclesInto || item.salvagesInto || item.crafting;
+    const hasNoRecycle = !recycleData || Object.keys(recycleData).length === 0;
     const isTrinket = trinketKeywords.some(keyword =>
       item.type.toLowerCase().includes(keyword)
     );
@@ -378,7 +395,9 @@ export class DecisionEngine {
     description: string;
     estimatedValue: number;
   } {
-    if (!item.recyclesInto || Object.keys(item.recyclesInto).length === 0) {
+    // Check all possible recycle data sources
+    const recycleData = item.recyclesInto || item.salvagesInto || item.crafting;
+    if (!recycleData || Object.keys(recycleData).length === 0) {
       return {
         isValuable: false,
         description: 'Nothing',
@@ -389,7 +408,7 @@ export class DecisionEngine {
     const materials: string[] = [];
     let totalValue = 0;
 
-    for (const [itemId, quantity] of Object.entries(item.recyclesInto)) {
+    for (const [itemId, quantity] of Object.entries(recycleData)) {
       const outputItem = this.items.get(itemId);
       if (outputItem) {
         materials.push(`${quantity}x ${this.getItemName(outputItem)}`);

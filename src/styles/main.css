@@ -1057,6 +1057,22 @@ body {
   border: 1px solid rgba(158, 158, 158, 0.3);
 }
 
+.recycle-value-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.15rem 0.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  background: rgba(0, 188, 212, 0.15);
+  color: #00bcd4;
+  border: 1px solid #00bcd4;
+}
+
 /* ========================================
    Confidence Bar
    ======================================== */
@@ -1483,6 +1499,11 @@ body {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-sm);
+}
+
+.recipe-description--missing {
+  font-style: italic;
+  color: rgba(255, 193, 7, 0.7);
 }
 
 /* ========================================

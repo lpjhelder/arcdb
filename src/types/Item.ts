@@ -32,7 +32,9 @@ export interface Item {
   stackSize: number;
   recyclesInto?: Record<string, number>; // itemId -> quantity
   salvagesInto?: Record<string, number>; // itemId -> quantity
+  crafting?: Record<string, number>; // itemId -> quantity (used by weapons/ammo for recycle materials)
   recipe?: Record<string, number>; // ingredientId -> quantity
+  upgradeCost?: Record<string, number>; // itemId -> quantity (cost to upgrade to this tier)
   craftBench?: string;
   effects?: ItemEffect[];
   foundIn?: string[];
@@ -53,4 +55,5 @@ export interface DecisionReason {
   decision: RecycleDecision;
   reasons: string[];
   dependencies?: string[]; // Quest/project/upgrade names
+  recycleValueExceedsItem?: boolean; // True if recycling yields more value than item
 }

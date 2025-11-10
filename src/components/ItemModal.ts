@@ -2,6 +2,7 @@ import type { Item, DecisionReason } from '../types/Item';
 import { dataLoader } from '../utils/dataLoader';
 import { getMapRecommendations, getZoneInfo } from '../utils/zoneMapping';
 import type { DecisionEngine } from '../utils/decisionEngine';
+import { WeaponGrouper } from '../utils/weaponGrouping';
 
 export interface ItemModalConfig {
   item: Item;
@@ -89,6 +90,7 @@ export class ItemModal {
               <span class="decision-badge decision-badge--${decisionData.decision}">
                 ${this.getDecisionLabel(decisionData.decision)}
               </span>
+              ${decisionData.recycleValueExceedsItem ? '<span class="recycle-value-badge">Recycle > Sell</span>' : ''}
             </div>
           </div>
         </div>
@@ -248,11 +250,17 @@ export class ItemModal {
 
   private renderRecyclesInto(item: Item): string {
     const isBlueprint = item.type.toLowerCase().includes('blueprint');
-    if (isBlueprint || !item.recyclesInto || Object.keys(item.recyclesInto).length === 0) {
+    if (isBlueprint) {
       return '';
     }
 
-    const recycleItems = Object.entries(item.recyclesInto)
+    // Check for recyclesInto, salvagesInto, or crafting properties
+    const recycleData = item.recyclesInto || item.salvagesInto || item.crafting;
+    if (!recycleData || Object.keys(recycleData).length === 0) {
+      return '';
+    }
+
+    const recycleItems = Object.entries(recycleData)
       .map(([itemId, quantity]) => {
         const outputItem = this.findItemByIdSimple(itemId);
         const iconUrl = outputItem ? dataLoader.getIconUrl(outputItem) : '';
@@ -281,38 +289,93 @@ export class ItemModal {
   }
 
   private renderCraftingRecipe(item: Item): string {
-    if (!item.recipe || Object.keys(item.recipe).length === 0) {
-      return '';
+    const isWeapon = item.type === 'Weapon' || item.type.toLowerCase().includes('weapon') || item.type.toLowerCase().includes('rifle') || item.type.toLowerCase().includes('pistol') || item.type.toLowerCase().includes('shotgun');
+
+    // Check if this is a weapon tier with upgrade cost
+    const hasUpgradeCost = item.upgradeCost && Object.keys(item.upgradeCost).length > 0;
+    const hasRecipe = item.recipe && Object.keys(item.recipe).length > 0;
+    const tierNumber = WeaponGrouper.getTierNumber(item.id);
+
+    // Higher tier weapons (II, III, IV) use upgradeCost
+    if (hasUpgradeCost && tierNumber > 1) {
+      const upgradeItems = Object.entries(item.upgradeCost!)
+        .map(([ingredientId, quantity]) => {
+          const ingredientItem = this.findItemByIdSimple(ingredientId);
+          const iconUrl = ingredientItem ? dataLoader.getIconUrl(ingredientItem) : '';
+          const itemName = ingredientItem?.name?.['en'] || ingredientId;
+          const rarity = (ingredientItem?.rarity || 'common').toLowerCase();
+
+          return `
+            <div class="recipe-item" data-item-id="${ingredientId}" title="${itemName}">
+              <div class="recipe-item__icon recipe-item__icon--${rarity}">
+                <img src="${iconUrl}" alt="${itemName}" onerror="this.outerHTML='<div class=\\'recipe-item__placeholder\\'>?</div>'" />
+                <span class="recipe-item__quantity">${quantity}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+      return `
+        <div class="item-modal__section">
+          <h3>Upgrade Cost</h3>
+          <p class="recipe-description">Materials needed to upgrade from Tier ${this.numberToRoman(tierNumber - 1)} to Tier ${this.numberToRoman(tierNumber)}:</p>
+          <div class="recipe-grid">
+            ${upgradeItems}
+          </div>
+        </div>
+      `;
     }
 
-    const recipeItems = Object.entries(item.recipe)
-      .map(([ingredientId, quantity]) => {
-        const ingredientItem = this.findItemByIdSimple(ingredientId);
-        const iconUrl = ingredientItem ? dataLoader.getIconUrl(ingredientItem) : '';
-        const itemName = ingredientItem?.name?.['en'] || ingredientId;
-        const rarity = (ingredientItem?.rarity || 'common').toLowerCase();
+    // Tier I weapons or items with recipes
+    if (hasRecipe) {
+      const recipeItems = Object.entries(item.recipe!)
+        .map(([ingredientId, quantity]) => {
+          const ingredientItem = this.findItemByIdSimple(ingredientId);
+          const iconUrl = ingredientItem ? dataLoader.getIconUrl(ingredientItem) : '';
+          const itemName = ingredientItem?.name?.['en'] || ingredientId;
+          const rarity = (ingredientItem?.rarity || 'common').toLowerCase();
 
-        return `
-          <div class="recipe-item" data-item-id="${ingredientId}" title="${itemName}">
-            <div class="recipe-item__icon recipe-item__icon--${rarity}">
-              <img src="${iconUrl}" alt="${itemName}" onerror="this.outerHTML='<div class=\\'recipe-item__placeholder\\'>?</div>'" />
-              <span class="recipe-item__quantity">${quantity}</span>
+          return `
+            <div class="recipe-item" data-item-id="${ingredientId}" title="${itemName}">
+              <div class="recipe-item__icon recipe-item__icon--${rarity}">
+                <img src="${iconUrl}" alt="${itemName}" onerror="this.outerHTML='<div class=\\'recipe-item__placeholder\\'>?</div>'" />
+                <span class="recipe-item__quantity">${quantity}</span>
+              </div>
             </div>
-          </div>
-        `;
-      })
-      .join('');
+          `;
+        })
+        .join('');
 
-    return `
-      <div class="item-modal__section">
-        <h3>Crafting Recipe</h3>
-        <p class="recipe-description">Ingredients needed to craft this item:</p>
-        <div class="recipe-grid">
-          ${recipeItems}
+      return `
+        <div class="item-modal__section">
+          <h3>Crafting Recipe</h3>
+          <p class="recipe-description">Ingredients needed to craft this item:</p>
+          <div class="recipe-grid">
+            ${recipeItems}
+          </div>
+          ${item.craftBench ? `<p class="craft-bench">Requires: ${item.craftBench}</p>` : ''}
         </div>
-        ${item.craftBench ? `<p class="craft-bench">Requires: ${item.craftBench}</p>` : ''}
-      </div>
-    `;
+      `;
+    }
+
+    // For weapons without recipe or upgrade cost
+    if (isWeapon) {
+      return `
+        <div class="item-modal__section">
+          <h3>Crafting Recipe</h3>
+          <p class="recipe-description recipe-description--missing">Crafting recipe data missing for this weapon.</p>
+        </div>
+      `;
+    }
+
+    // For non-weapons without recipes, don't show the section
+    return '';
+  }
+
+  private numberToRoman(num: number): string {
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    return romanNumerals[num - 1] || String(num);
   }
 
   private renderUsedToCraft(item: Item): string {
