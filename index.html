@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Arc Raiders Loot Decision Tool - Quickly determine what to keep, recycle, or sell">
-  <title>Arc Raiders Loot List - Keep, Recycle, or Sell Guide</title>
+  <meta name="description" content="Kronon - Ferramenta de Decisão de Loot para Arc Raiders - Determine rapidamente o que guardar, reciclar ou vender">
+  <title>Kronon - Guia de Loot Arc Raiders</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Semi+Condensed:wght@700&display=swap" rel="stylesheet">
@@ -16,8 +16,11 @@
         <div class="header-layout">
           <div class="header-left">
             <h1 class="logo">
-              <span class="logo-text">ARC RAIDERS</span>
-              <span class="logo-subtitle">Loot Decision Tool</span>
+              <img src="/logo.png" alt="Kronon Logo" class="logo-image" />
+              <div class="logo-content">
+                <span class="logo-text">KRONON</span>
+                <span class="logo-subtitle">Guia de Loot</span>
+              </div>
             </h1>
           </div>
           <div class="header-right">
@@ -25,24 +28,24 @@
               <input
                 type="search"
                 id="search"
-                placeholder="Search items..."
+                placeholder="Buscar itens..."
                 class="search-input-header"
                 autocomplete="off"
               />
             </div>
             <div class="header-sort">
               <select id="sort-selector" class="sort-select">
-                <option value="name">Name</option>
-                <option value="value">Value</option>
-                <option value="rarity">Rarity</option>
-                <option value="weight">Weight</option>
-                <option value="decision">Decision</option>
+                <option value="name">Nome</option>
+                <option value="value">Valor</option>
+                <option value="rarity">Raridade</option>
+                <option value="weight">Peso</option>
+                <option value="decision">Decisão</option>
               </select>
-              <button id="sort-direction-btn" class="sort-direction-btn" title="Sort ascending">↑</button>
+              <button id="sort-direction-btn" class="sort-direction-btn" title="Ordenar ascendente">↑</button>
             </div>
             <div class="view-toggle">
-              <button class="toggle-btn active" data-view="grid">Grid</button>
-              <button class="toggle-btn" data-view="list">List</button>
+              <button class="toggle-btn active" data-view="grid">Grade</button>
+              <button class="toggle-btn" data-view="list">Lista</button>
             </div>
           </div>
         </div>
@@ -57,32 +60,32 @@
             <!-- Filters -->
             <div class="controls collapsible collapsed">
               <h3 class="collapsible-header" data-target="search-content">
-                <span>Filters</span>
+                <span>Filtros</span>
                 <span class="collapse-icon">▼</span>
               </h3>
               <div class="collapsible-content" id="search-content">
                 <div class="filters" id="filters">
                   <div class="filter-group">
-                    <label class="filter-label">Decision:</label>
+                    <label class="filter-label">Decisão:</label>
                     <div class="filter-buttons" id="decision-filter"></div>
                   </div>
 
                   <div class="filter-group">
-                    <label class="filter-label">Rarity:</label>
+                    <label class="filter-label">Raridade:</label>
                     <div class="filter-buttons" id="rarity-filter"></div>
                   </div>
 
                   <div class="filter-group">
-                    <label class="filter-label">Category:</label>
+                    <label class="filter-label">Categoria:</label>
                     <select id="category-filter" class="filter-select">
-                      <option value="">All Categories</option>
+                      <option value="">Todas Categorias</option>
                     </select>
                   </div>
 
                   <div class="filter-group">
                     <label class="filter-label checkbox-label">
                       <input type="checkbox" id="cosmetics-toggle" class="filter-checkbox">
-                      <span>Show Cosmetics</span>
+                      <span>Mostrar Cosméticos</span>
                     </label>
                   </div>
                 </div>
@@ -92,7 +95,7 @@
             <!-- Workshop Progress -->
             <div class="controls collapsible">
               <h3 class="collapsible-header" data-target="workshop-content">
-                <span>Hideout Progress</span>
+                <span>Progresso do Esconderijo</span>
                 <span class="collapse-icon">▼</span>
               </h3>
               <div class="collapsible-content" id="workshop-content">
@@ -103,7 +106,7 @@
             <!-- Location Filter -->
             <div class="controls collapsible">
               <h3 class="collapsible-header" data-target="zone-filter-content">
-                <span>Location</span>
+                <span>Localização</span>
                 <span class="collapse-icon">▼</span>
               </h3>
               <div class="collapsible-content" id="zone-filter-content">
@@ -125,8 +128,8 @@
 
     <footer class="footer">
       <div class="container">
-        <p>Data auto-updates daily from community sources • Not affiliated with Embark Studios</p>
-        <p class="update-info">Last updated: <span id="last-update">Loading...</span></p>
+        <p>Dados atualizados diariamente de fontes da comunidade • Não afiliado com Embark Studios</p>
+        <p class="update-info">Última atualização: <span id="last-update">Carregando...</span></p>
       </div>
     </footer>
   </div>

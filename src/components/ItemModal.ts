@@ -106,7 +106,7 @@ export class ItemModal {
         });
       } catch (error) {
         console.error('Failed to load recipes:', error);
-        placeholder.innerHTML = '<p style="color: #888;">Failed to load recipes</p>';
+        placeholder.innerHTML = '<p style="color: #888;">Falha ao carregar receitas</p>';
       }
     };
 
@@ -122,7 +122,7 @@ export class ItemModal {
     const { item, decisionData } = this.config;
     const iconUrl = dataLoader.getIconUrl(item);
     const itemName = item.name || '[Unknown Item]';
-    const description = item.description || 'No description available.';
+    const description = item.description || 'Nenhuma descrição disponível.';
     const itemValue = item.value ?? 0;
     const itemWeight = item.weightKg ?? 0;
     const itemStack = item.stackSize ?? 1;
@@ -147,19 +147,19 @@ export class ItemModal {
               <span class="decision-badge decision-badge--${decisionData.decision}">
                 ${this.getDecisionLabel(decisionData.decision)}
               </span>
-              ${decisionData.recycleValueExceedsItem ? '<span class="recycle-value-badge">Recycle > Sell</span>' : ''}
+              ${decisionData.recycleValueExceedsItem ? '<span class="recycle-value-badge">Reciclar > Vender</span>' : ''}
             </div>
           </div>
         </div>
 
         <div class="item-modal__body">
           <div class="item-modal__section">
-            <h3>Description</h3>
+            <h3>Descrição</h3>
             <p>${description}</p>
           </div>
 
           <div class="item-modal__section">
-            <h3>Decision Analysis</h3>
+            <h3>Análise de Decisão</h3>
             <div class="decision-analysis">
               <div class="decision-analysis__header">
                 <span class="decision-analysis__decision decision-${decisionData.decision}">
@@ -169,7 +169,7 @@ export class ItemModal {
               ${this.renderDecisionReasons(decisionData)}
               ${decisionData.dependencies && decisionData.dependencies.length > 0 ? `
                 <div class="decision-analysis__dependencies">
-                  <strong>Required for:</strong> ${decisionData.dependencies.join(', ')}
+                  <strong>Necessário para:</strong> ${decisionData.dependencies.join(', ')}
                 </div>
               ` : ''}
             </div>
@@ -177,15 +177,15 @@ export class ItemModal {
 
           <div class="item-modal__grid">
             <div class="item-modal__section">
-              <h3>Properties</h3>
+              <h3>Propriedades</h3>
               <dl class="property-list">
-                <dt>Type</dt>
-                <dd>${item.type || 'Unknown'}</dd>
-                <dt>Value</dt>
-                <dd>${itemValue} coins</dd>
-                <dt>Weight</dt>
+                <dt>Tipo</dt>
+                <dd>${item.type || 'Desconhecido'}</dd>
+                <dt>Valor</dt>
+                <dd>${itemValue} moedas</dd>
+                <dt>Peso</dt>
                 <dd>${itemWeight} kg</dd>
-                <dt>Stack Size</dt>
+                <dt>Tamanho da Pilha</dt>
                 <dd>${itemStack}</dd>
               </dl>
             </div>
@@ -194,21 +194,21 @@ export class ItemModal {
 
             ${this.renderCraftingRecipe(item)}
 
-            ${includeUsedToCraft ? this.renderUsedToCraft(item) : '<div id="used-to-craft-placeholder" class="modal-loading" style="min-height: 100px;">Loading recipes...</div>'}
+            ${includeUsedToCraft ? this.renderUsedToCraft(item) : '<div id="used-to-craft-placeholder" class="modal-loading" style="min-height: 100px;">Carregando receitas...</div>'}
 
             ${Array.isArray(item.foundIn) && item.foundIn.length > 0 ? `
               <div class="item-modal__section">
-                <h3>Location & Maps</h3>
+<h3>Localização & Mapas</h3>
 
                 <div class="location-zones">
-                  <h4>Zone Types:</h4>
+                  <h4>Tipos de Zona:</h4>
                   <div class="zone-badges">
                     ${item.foundIn.map(location => {
       const zoneInfo = getZoneInfo(location);
       return `<span class="zone-badge" style="--zone-color: ${zoneInfo?.color || '#6b7280'}" title="${zoneInfo?.description || location}">${location}</span>`;
     }).join('')}
                   </div>
-                  <p class="zone-hint">Search for loot containers in these zone types</p>
+                  <p class="zone-hint">Procure por containers de loot nesses tipos de zona</p>
                 </div>
 
                 ${this.renderEnemyDropInfo(item)}
@@ -237,12 +237,12 @@ export class ItemModal {
 
     return `
       <div class="enemy-drop-info">
-        <h4>Dropped By:</h4>
+        <h4>Dropado Por:</h4>
         <div class="enemy-badge">
           <span class="enemy-name">${enemyInfo.displayName}</span>
           ${enemyInfo.tier ? `<span class="enemy-tier enemy-tier--${enemyInfo.tier.toLowerCase()}">${enemyInfo.tier}</span>` : ''}
         </div>
-        <p class="map-hint">Hunt ${enemyInfo.displayName} enemies to farm this item</p>
+        <p class="map-hint">Cace inimigos ${enemyInfo.displayName} para farmar este item</p>
       </div>
     `;
   }
@@ -258,10 +258,10 @@ export class ItemModal {
     if (maps.includes('Hideout')) {
       return `
         <div class="map-recommendations">
-          <h4>Available At:</h4>
+          <h4>Disponível Em:</h4>
           <div class="vendor-info">
-            <span class="map-badge map-badge--vendor">Hideout - Exodus Vendor</span>
-            <p class="map-hint">Purchase this item from the Exodus faction vendor in your Hideout</p>
+            <span class="map-badge map-badge--vendor">Esconderijo - Vendedor Exodus</span>
+            <p class="map-hint">Compre este item do vendedor da facção Exodus no seu Esconderijo</p>
           </div>
         </div>
       `;
@@ -272,10 +272,10 @@ export class ItemModal {
     if (maps.includes('All Maps')) {
       return `
         <div class="map-recommendations">
-          <h4>Where to Find:</h4>
+          <h4>Onde Encontrar:</h4>
           <div class="all-maps-info">
-            <span class="map-badge map-badge--all">Available on All Maps</span>
-            <p class="map-hint">${hasEnemyInfo ? 'Hunt ARC enemies on any raid map to farm this item' : 'Can be looted from enemies across all maps'}</p>
+            <span class="map-badge map-badge--all">Disponível em Todos os Mapas</span>
+            <p class="map-hint">${hasEnemyInfo ? 'Caçe inimigos ARC em qualquer mapa de raid para farmar este item' : 'Pode ser coletado de inimigos em todos os mapas'}</p>
           </div>
         </div>
       `;
@@ -289,23 +289,23 @@ export class ItemModal {
     let zoneDescription = '';
     if (zoneCategories.has('building')) {
       const buildingZones = zoneDetails.filter(z => z!.category === 'building').map(z => z!.displayName);
-      zoneDescription = `Look inside <strong>${buildingZones.join(', ')}</strong> buildings`;
+      zoneDescription = `Procure dentro de edifícios <strong>${buildingZones.join(', ')}</strong>`;
     } else if (zoneCategories.has('environment')) {
       const envZones = zoneDetails.filter(z => z!.category === 'environment').map(z => z!.displayName);
-      zoneDescription = `Search <strong>${envZones.join(', ')}</strong> areas`;
+      zoneDescription = `Procure em áreas <strong>${envZones.join(', ')}</strong>`;
     } else {
-      zoneDescription = `Search <strong>${zones.join(', ')}</strong> zones`;
+      zoneDescription = `Procure nas zonas <strong>${zones.join(', ')}</strong>`;
     }
 
     return `
       <div class="map-recommendations">
-        <h4>Map Locations:</h4>
+        <h4>Localizações no Mapa:</h4>
         <button class="btn btn--map" data-action="view-map">
-          View Interactive Map
+          Ver Mapa Interativo
         </button>
         <div class="location-help">
           <p class="map-hint">
-            ${zoneDescription} - click "View Interactive Map" for precise locations
+            ${zoneDescription} - clique em "Ver Mapa Interativo" para localizações precisas
           </p>
         </div>
       </div>
@@ -369,9 +369,9 @@ export class ItemModal {
 
   private getDecisionLabel(decision: string): string {
     const labels: Record<string, string> = {
-      keep: 'KEEP',
-      sell_or_recycle: 'SAFE TO SELL',
-      situational: 'REVIEW'
+      keep: 'GUARDAR',
+      sell_or_recycle: 'VENDER/RECICLAR',
+      situational: 'REVISAR'
     };
     return labels[decision] || decision.toUpperCase();
   }
@@ -436,7 +436,7 @@ export class ItemModal {
 
     return `
       <div class="item-modal__section">
-        <h3>Recycles Into</h3>
+        <h3>Reciclagem</h3>
         <div class="recipe-grid">
           ${recycleItems}
         </div>
@@ -505,12 +505,12 @@ export class ItemModal {
 
       return `
         <div class="item-modal__section">
-          <h3>Crafting Recipe</h3>
-          <p class="recipe-description">Ingredients needed to craft this item:</p>
+          <h3>Receita de Craftagem</h3>
+          <p class="recipe-description">Ingredientes necessários para craftar este item:</p>
           <div class="recipe-grid">
             ${recipeItems}
           </div>
-          ${item.craftBench ? `<p class="craft-bench">Requires: ${item.craftBench}</p>` : ''}
+          ${item.craftBench ? `<p class="craft-bench">Requer: ${item.craftBench}</p>` : ''}
         </div>
       `;
     }
@@ -519,8 +519,8 @@ export class ItemModal {
     if (isWeapon) {
       return `
         <div class="item-modal__section">
-          <h3>Crafting Recipe</h3>
-          <p class="recipe-description recipe-description--missing">Crafting recipe data missing for this weapon.</p>
+          <h3>Receita de Craftagem</h3>
+          <p class="recipe-description recipe-description--missing">Dados de receita de craftagem ausentes para esta arma.</p>
         </div>
       `;
     }
@@ -561,8 +561,8 @@ export class ItemModal {
 
     return `
       <div class="item-modal__section">
-        <h3>Used to Craft</h3>
-        <p class="recipe-description">This item is used as an ingredient in ${usedInItems.length} recipe${usedInItems.length > 1 ? 's' : ''}:</p>
+        <h3>Usado para Craftar</h3>
+        <p class="recipe-description">Este item é usado como ingrediente em ${usedInItems.length} receita${usedInItems.length > 1 ? 's' : ''}:</p>
         <div class="recipe-grid">
           ${itemsList}
         </div>

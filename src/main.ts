@@ -78,7 +78,7 @@ class App {
 
     } catch (error) {
       console.error('Failed to initialize app:', error);
-      this.showError('Failed to load data. Please refresh the page.');
+      this.showError('Falha ao carregar dados. Por favor, recarregue a página.');
     }
   }
 
@@ -129,9 +129,9 @@ class App {
 
     const decisions: RecycleDecision[] = ['keep', 'sell_or_recycle', 'situational'];
     const labels: Record<RecycleDecision, string> = {
-      keep: 'Keep',
-      sell_or_recycle: 'Safe to Sell',
-      situational: 'Your Call'
+      keep: 'Guardar',
+      sell_or_recycle: 'Vender/Reciclar',
+      situational: 'Sua Decisão'
     };
 
     decisions.forEach(decision => {
@@ -239,7 +239,7 @@ class App {
 
     const isAsc = this.filters.sortDirection === 'asc';
     btn.innerHTML = isAsc ? '↑' : '↓';
-    btn.title = isAsc ? 'Sort ascending' : 'Sort descending';
+    btn.title = isAsc ? 'Ordenar ascendente' : 'Ordenar descendente';
     btn.setAttribute('data-direction', this.filters.sortDirection);
   }
 
@@ -473,7 +473,7 @@ class App {
     this.itemsGrid.innerHTML = '';
 
     if (this.filteredItems.length === 0) {
-      this.itemsGrid.innerHTML = '<div class="no-results">No items found matching your filters.</div>';
+      this.itemsGrid.innerHTML = '<div class="no-results">Nenhum item encontrado com os filtros selecionados.</div>';
       return;
     }
 
@@ -544,9 +544,9 @@ class App {
     if (app) {
       app.innerHTML = `
         <div class="error-screen">
-          <h1>Error</h1>
+          <h1>Erro</h1>
           <p>${message}</p>
-          <button onclick="location.reload()">Reload Page</button>
+          <button onclick="location.reload()">Recarregar Página</button>
         </div>
       `;
     }
