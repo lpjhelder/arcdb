@@ -10,6 +10,7 @@ import { ItemModal } from './components/ItemModal';
 import { ZoneFilter } from './components/ZoneFilter';
 import { EventTimers } from './components/EventTimers';
 import { GAME_EVENTS } from './data/events';
+import { InteractiveMap } from './components/InteractiveMap';
 
 class App {
   private gameData!: GameData;
@@ -20,7 +21,8 @@ class App {
   private filteredItems: SearchableItem[] = [];
   private zoneFilter!: ZoneFilter;
   private eventTimers?: EventTimers;
-  private currentTab: 'items' | 'events' = 'items';
+  private interactiveMap?: InteractiveMap;
+  private currentTab: 'items' | 'events' | 'maps' = 'items';
 
   private searchInput!: HTMLInputElement;
   private itemsGrid!: HTMLElement;
@@ -139,7 +141,7 @@ class App {
 
     navTabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        const tabName = tab.getAttribute('data-tab') as 'items' | 'events';
+        const tabName = tab.getAttribute('data-tab') as 'items' | 'events' | 'maps';
         
         // Update active tab
         navTabs.forEach(t => t.classList.remove('active'));
@@ -157,6 +159,11 @@ class App {
 
         // Show/hide header controls based on tab
         this.updateHeaderControls();
+        
+        // Lazy load interactive map when Maps tab is clicked
+        if (tabName === 'maps' && !this.interactiveMap) {
+          this.initializeInteractiveMap();
+        }
       });
     });
   }
@@ -197,6 +204,23 @@ class App {
     setInterval(() => {
       this.updateEventPreview();
     }, 5000);
+  }
+
+  private async initializeInteractiveMap() {
+    const container = document.getElementById('interactive-map-container');
+    if (!container) return;
+
+    try {
+      // Carregar dados dos mapas
+      const response = await fetch('/data/maps.json');
+      const mapData = await response.json();
+
+      this.interactiveMap = new InteractiveMap(container);
+      await this.interactiveMap.init(mapData);
+    } catch (error) {
+      console.error('Failed to initialize interactive map:', error);
+      container.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--color-text-muted);">Erro ao carregar mapas</p>';
+    }
   }
 
   private updateEventPreview() {

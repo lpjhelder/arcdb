@@ -174,11 +174,11 @@ export class MapView {
       actualBounds?: [number, number, number, number]  // Actual tile bounds in pixels
     }> = {
       'dam': {
-        worldExtent: [0, 0, 8192, 8192],  // 256 * 32
-        tileSize: 256,
-        initialZoom: 3,
+        worldExtent: [0, 0, 8192, 8192],  // Game coordinate space
+        tileSize: 512,  // Physical tile size (each tile file is 512×512px)
+        initialZoom: 2,  // Tiles are stored at zoom 2 (16×16 grid)
         center: [2653, 3956],  // Center of actual markers
-        actualBounds: [0, 0, 4096, 4096]  // 16×16 tiles @ 256px
+        actualBounds: [0, 0, 8192, 8192]  // 16×16 tiles @ 512px each
       },
       'spaceport': {
         worldExtent: [0, 0, 16384, 16384],  // 512 * 32
@@ -237,21 +237,57 @@ export class MapView {
   private createCustomCRS(mapName: string): L.CRS {
     const config = this.getMapConfig(mapName);
     const worldExtent = config.worldExtent;
-    const tileExtent = [0, 0, config.tileSize, config.tileSize];
+    
+    // CRITICAL CONCEPT:
+    // - worldExtent = game coordinate space (e.g., [0, 0, 8192, 8192])
+    // - We need to map this to pixel space at zoom 0
+    // - At the zoom level where tiles are stored (e.g., zoom 2):
+    //   * We want exact 1:1 pixel mapping with tiles
+    //   * If we have 16×16 tiles of 512px each = 8192px total at zoom 2
+    //   * At zoom 0, this equals: 8192 / 2^2 = 2048 pixels
+    // - So transformation scale = 2048px / 8192 world units = 0.25
+    
+    // For zoom level where tiles are stored (typically zoom 2):
+    // At that zoom: worldSize * scale * 2^zoom = actualPixelSize
+    // We want: 8192 * scale * 2^2 = 8192  → scale = 0.25
+    
+    // Calculate how many pixels the world should be at zoom 0
+    // Based on: (numTiles * tileSize) / 2^tileZoomLevel
+    const mapExtents = this.getMapExtentsData();
+    const extentData = mapExtents[mapName];
+    
+    let pixelsAtZoom0: number;
+    if (extentData && extentData.tilesWide && extentData.tileSize) {
+      // Calculate based on actual tile grid
+      const tileZoomLevel = 2; // Tiles stored at zoom 2
+      const actualPixelSize = extentData.tilesWide * extentData.tileSize;
+      pixelsAtZoom0 = actualPixelSize / Math.pow(2, tileZoomLevel);
+      console.log(`[${mapName}] Calculated from extent data: ${extentData.tilesWide} tiles × ${extentData.tileSize}px at zoom ${tileZoomLevel} = ${actualPixelSize}px → ${pixelsAtZoom0}px at zoom 0`);
+    } else {
+      // Fallback: assume standard configuration
+      pixelsAtZoom0 = 2048;
+      console.log(`[${mapName}] Using default: ${pixelsAtZoom0}px at zoom 0`);
+    }
 
-    // Calculate transformation parameters (from MetaForge's Ma function)
     const worldMin = { x: worldExtent[0], y: worldExtent[1] };
     const worldMax = { x: worldExtent[2], y: worldExtent[3] };
-    const tileMin = { x: tileExtent[0], y: tileExtent[1] };
-    const tileMax = { x: tileExtent[2], y: tileExtent[3] };
+    const worldWidth = worldMax.x - worldMin.x;
+    const worldHeight = worldMax.y - worldMin.y;
 
-    // scaleX/scaleY: How much to multiply game coords to get pixel coords at zoom 0
-    const scaleX = (tileMax.x - tileMin.x) / (worldMax.x - worldMin.x);
-    const offsetX = tileMin.x - scaleX * worldMin.x;
-    const scaleY = (tileMax.y - tileMin.y) / (worldMax.y - worldMin.y);
-    const offsetY = tileMin.y - scaleY * worldMin.y;
+    // Scale: pixels at zoom 0 per world unit
+    const scaleX = pixelsAtZoom0 / worldWidth;
+    const scaleY = pixelsAtZoom0 / worldHeight;
+    const offsetX = -scaleX * worldMin.x;
+    const offsetY = -scaleY * worldMin.y;
 
-    console.log(`[${mapName}] CRS transformation:`, { scaleX, offsetX, scaleY, offsetY, worldExtent, tileSize: config.tileSize });
+    console.log(`[${mapName}] CRS transformation:`, { 
+      scaleX, offsetX, scaleY, offsetY, 
+      worldExtent, 
+      tileSize: config.tileSize,
+      pixelsAtZoom0,
+      worldWidth,
+      worldHeight
+    });
 
     // Create custom CRS with the transformation
     const customCRS = L.extend({}, L.CRS.Simple, {
@@ -259,6 +295,16 @@ export class MapView {
     });
 
     return customCRS;
+  }
+
+  private getMapExtentsData(): Record<string, any> {
+    // This should ideally load from map-extents.json, but for now hardcode
+    return {
+      'dam': { tilesWide: 16, tilesHigh: 16, tileSize: 512 },
+      'spaceport': { tilesWide: 9, tilesHigh: 6, tileSize: 512 },
+      'buried-city': { tilesWide: 15, tilesHigh: 10, tileSize: 512 },
+      'blue-gate': { tilesWide: 10, tilesHigh: 8, tileSize: 512 }
+    };
   }
 
   private initializeLeafletMap(mapData: { mapName: string; markers: MapMarker[]; isActive: boolean }): void {
