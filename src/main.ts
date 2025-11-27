@@ -3,12 +3,13 @@ import { dataLoader, type GameData } from './utils/dataLoader';
 import { DecisionEngine } from './utils/decisionEngine';
 import { SearchEngine, type SearchableItem, isCosmetic } from './utils/searchEngine';
 import { StorageManager } from './utils/storage';
-import { VisitorCounter } from './utils/visitorCounter';
 import type { UserProgress } from './types/UserProgress';
 import type { Item, RecycleDecision } from './types/Item';
 import { ItemCard } from './components/ItemCard';
 import { ItemModal } from './components/ItemModal';
 import { ZoneFilter } from './components/ZoneFilter';
+import { EventTimers } from './components/EventTimers';
+import { GAME_EVENTS } from './data/events';
 
 class App {
   private gameData!: GameData;
@@ -18,6 +19,8 @@ class App {
   private allItems: SearchableItem[] = [];
   private filteredItems: SearchableItem[] = [];
   private zoneFilter!: ZoneFilter;
+  private eventTimers?: EventTimers;
+  private currentTab: 'items' | 'events' = 'items';
 
   private searchInput!: HTMLInputElement;
   private itemsGrid!: HTMLElement;
@@ -74,9 +77,6 @@ class App {
       // Update last updated time
       this.updateLastUpdated();
 
-      // Initialize visitor counter
-      VisitorCounter.initCounter();
-
       // Hide loading
       this.hideLoading();
 
@@ -125,6 +125,164 @@ class App {
 
     // Initialize zone filter
     this.initializeZoneFilter();
+
+    // Initialize tab navigation
+    this.initializeTabNavigation();
+
+    // Initialize Event Timers
+    this.initializeEventTimers();
+  }
+
+  private initializeTabNavigation() {
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    navTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab') as 'items' | 'events';
+        
+        // Update active tab
+        navTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update active content
+        tabContents.forEach(content => content.classList.remove('active'));
+        const targetContent = document.getElementById(`${tabName}-tab`);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+
+        // Update current tab
+        this.currentTab = tabName;
+
+        // Show/hide header controls based on tab
+        this.updateHeaderControls();
+      });
+    });
+  }
+
+  private updateHeaderControls() {
+    const searchContainer = document.getElementById('header-search-container');
+    const sortContainer = document.getElementById('header-sort-container');
+    const viewToggleContainer = document.getElementById('view-toggle-container');
+
+    if (this.currentTab === 'items') {
+      // Show controls on items tab
+      if (searchContainer) searchContainer.style.display = 'flex';
+      if (sortContainer) sortContainer.style.display = 'flex';
+      if (viewToggleContainer) viewToggleContainer.style.display = 'flex';
+    } else {
+      // Hide controls on other tabs
+      if (searchContainer) searchContainer.style.display = 'none';
+      if (sortContainer) sortContainer.style.display = 'none';
+      if (viewToggleContainer) viewToggleContainer.style.display = 'none';
+    }
+  }
+
+  private initializeEventTimers() {
+    const container = document.getElementById('event-timers-container');
+    if (!container) return;
+
+    this.eventTimers = new EventTimers(container);
+    this.eventTimers.render(GAME_EVENTS);
+
+    // Initialize preview dropdown
+    this.initializeEventPreview();
+  }
+
+  private initializeEventPreview() {
+    this.updateEventPreview();
+
+    // Update preview every 5 seconds
+    setInterval(() => {
+      this.updateEventPreview();
+    }, 5000);
+  }
+
+  private updateEventPreview() {
+    const previewList = document.getElementById('preview-events-list');
+    const timeDisplay = document.getElementById('preview-current-time');
+    
+    if (!previewList || !timeDisplay) return;
+
+    // Update current time
+    const now = new Date();
+    const utcTime = now.toUTCString().split(' ')[4]; // Gets HH:MM:SS
+    timeDisplay.textContent = `${utcTime} UTC`;
+
+    // Get current events status
+    const currentHourUTC = now.getUTCHours();
+    const eventsStatus: Array<{
+      event: typeof GAME_EVENTS[0],
+      isActive: boolean,
+      timeInfo: string
+    }> = [];
+
+    GAME_EVENTS.forEach(event => {
+      let isActive = false;
+      let timeInfo = '';
+
+      // Check if event is active now
+      const activeWindow = event.schedule.find(
+        w => currentHourUTC >= w.startHour && currentHourUTC < w.endHour
+      );
+
+      if (activeWindow) {
+        isActive = true;
+        const minutesLeft = (activeWindow.endHour - currentHourUTC - 1) * 60 + (60 - now.getUTCMinutes());
+        timeInfo = `Termina em ${minutesLeft}m`;
+      } else {
+        // Find next occurrence
+        const futureWindows = event.schedule
+          .filter(w => currentHourUTC < w.startHour)
+          .sort((a, b) => a.startHour - b.startHour);
+
+        if (futureWindows.length > 0) {
+          const nextWindow = futureWindows[0];
+          const hoursUntil = nextWindow.startHour - currentHourUTC;
+          const minutesUntil = 60 - now.getUTCMinutes();
+          
+          if (hoursUntil === 0) {
+            timeInfo = `Em ${minutesUntil}m`;
+          } else if (hoursUntil === 1) {
+            timeInfo = `Em ${minutesUntil}m`;
+          } else {
+            timeInfo = `Em ${hoursUntil}h`;
+          }
+        } else {
+          // Next occurrence is tomorrow
+          const tomorrowWindow = event.schedule
+            .sort((a, b) => a.startHour - b.startHour)[0];
+          const hoursUntil = (24 - currentHourUTC) + tomorrowWindow.startHour;
+          timeInfo = `Em ${hoursUntil}h`;
+        }
+      }
+
+      eventsStatus.push({ event, isActive, timeInfo });
+    });
+
+    // Sort: active first, then by time
+    eventsStatus.sort((a, b) => {
+      if (a.isActive && !b.isActive) return -1;
+      if (!a.isActive && b.isActive) return 1;
+      return 0;
+    });
+
+    // Render preview items (show top 5)
+    previewList.innerHTML = eventsStatus.slice(0, 5).map(({ event, isActive, timeInfo }) => `
+      <div class="event-preview-item ${isActive ? 'event-preview-item--active' : ''}">
+        <img class="event-preview-item__image" src="${event.imageUrl}" alt="${event.name}">
+        <div class="event-preview-item__content">
+          <div class="event-preview-item__name">${event.name}</div>
+          <div class="event-preview-item__status">
+            <span class="event-preview-item__badge ${isActive ? 'event-preview-item__badge--active' : 'event-preview-item__badge--upcoming'}">
+              ${isActive ? 'ATIVO' : 'PRÓXIMO'}
+            </span>
+            <span class="event-preview-item__time">${timeInfo}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
   }
 
   private initializeDecisionFilters() {
