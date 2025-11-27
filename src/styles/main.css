@@ -791,6 +791,31 @@ body {
   top: 80px;
   width: 200px;
   flex-shrink: 0;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-accent-cyan) var(--color-bg-card);
+}
+
+/* Webkit scrollbar styling for sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--color-accent-cyan);
+  border-radius: var(--radius-sm);
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-orange);
 }
 
 .main-content {
