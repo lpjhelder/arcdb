@@ -1,4 +1,4 @@
-﻿import L from 'leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Item } from '../types/Item';
 import { mapLoader, type MapData, type MapMarker, MAP_BOUNDS } from '../utils/mapLoader';
@@ -9,15 +9,15 @@ import {
   formatSubcategoryName
 } from '../utils/itemMarkerMapper';
 
-export interface MapViewConfig {
+export interface InteractiveMapViewConfig {
   item: Item;
   onClose: () => void;
 }
 
-export class MapView {
+export class InteractiveMapView {
   private static instanceCounter: number = 0;
   private instanceId: string;
-  private config: MapViewConfig;
+  private config: InteractiveMapViewConfig;
   private activeMap: string = 'dam';
   private mapData: MapData[] = [];
   private container: HTMLElement | null = null;
@@ -27,9 +27,9 @@ export class MapView {
   // DEBUG: Set to true to enable alignment controls for debugging map positioning
   private enableAlignmentControls: boolean = false;
 
-  constructor(config: MapViewConfig) {
+  constructor(config: InteractiveMapViewConfig) {
     this.config = config;
-    this.instanceId = `mapview-${MapView.instanceCounter++}`;
+    this.instanceId = `mapview-${InteractiveMapView.instanceCounter++}`;
   }
 
   async init(): Promise<void> {
@@ -68,7 +68,7 @@ export class MapView {
         <div class="map-view map-view--empty">
           <div class="map-view__header">
             <h2>${item.name} - Locations</h2>
-            <button class="modal-close" data-action="close">├ù</button>
+            <button class="modal-close" data-action="close">×</button>
           </div>
           <div class="map-view__empty-state">
             <p>This item is not available on all maps.</p>
@@ -103,7 +103,7 @@ export class MapView {
             <h2>${item.name}</h2>
             <span class="map-view__marker-count">${totalMarkers} location${totalMarkers !== 1 ? 's' : ''}</span>
           </div>
-          <button class="modal-close" data-action="close">├ù</button>
+          <button class="modal-close" data-action="close">×</button>
         </div>
 
         ${this.renderMapTabs(mapsWithMarkers)}
@@ -165,7 +165,7 @@ export class MapView {
 
   private getMapConfig(mapName: string) {
     // MetaForge coordinate space - most maps use 32:1 ratio (tileSize * 32)
-    // Blue Gate uses custom 10240├ù10240
+    // Blue Gate uses custom 10240×10240
     const configs: Record<string, {
       worldExtent: number[],  // MetaForge coordinate space
       tileSize: number,
@@ -174,32 +174,32 @@ export class MapView {
       actualBounds?: [number, number, number, number]  // Actual tile bounds in pixels
     }> = {
       'dam': {
-        worldExtent: [0, 0, 8192, 8192],  // 256 * 32
-        tileSize: 256,
-        initialZoom: 3,
+        worldExtent: [0, 0, 8192, 8192],  // Game coordinate space
+        tileSize: 512,  // Physical tile size (each tile file is 512×512px)
+        initialZoom: 2,  // Tiles are stored at zoom 2 (16×16 grid)
         center: [2653, 3956],  // Center of actual markers
-        actualBounds: [0, 0, 4096, 4096]  // 16├ù16 tiles @ 256px
+        actualBounds: [0, 0, 8192, 8192]  // 16×16 tiles @ 512px each
       },
       'spaceport': {
         worldExtent: [0, 0, 16384, 16384],  // 512 * 32
         tileSize: 512,
         initialZoom: 2.5,
         center: [2398, 3864],  // Center of actual markers
-        actualBounds: [0, 0, 4608, 3072]  // 9├ù6 tiles @ 512px
+        actualBounds: [0, 0, 4608, 3072]  // 9×6 tiles @ 512px
       },
       'buried-city': {
         worldExtent: [0, 0, 16384, 16384],  // 512 * 32
         tileSize: 512,
         initialZoom: 2,
         center: [4938, 7175],  // Center of actual markers
-        actualBounds: [0, 0, 7680, 5120]  // 15├ù10 tiles @ 512px
+        actualBounds: [0, 0, 7680, 5120]  // 15×10 tiles @ 512px
       },
       'blue-gate': {
         worldExtent: [1861, 361, 21309, 19809],
         tileSize: 512,
         initialZoom: 2,
         center: [5208, 7110],  // Center of actual markers
-        actualBounds: [0, 0, 5120, 4096]  // 10├ù8 tiles @ 512px
+        actualBounds: [0, 0, 5120, 4096]  // 10×8 tiles @ 512px
       }
     };
 
@@ -237,21 +237,57 @@ export class MapView {
   private createCustomCRS(mapName: string): L.CRS {
     const config = this.getMapConfig(mapName);
     const worldExtent = config.worldExtent;
-    const tileExtent = [0, 0, config.tileSize, config.tileSize];
+    
+    // CRITICAL CONCEPT:
+    // - worldExtent = game coordinate space (e.g., [0, 0, 8192, 8192])
+    // - We need to map this to pixel space at zoom 0
+    // - At the zoom level where tiles are stored (e.g., zoom 2):
+    //   * We want exact 1:1 pixel mapping with tiles
+    //   * If we have 16×16 tiles of 512px each = 8192px total at zoom 2
+    //   * At zoom 0, this equals: 8192 / 2^2 = 2048 pixels
+    // - So transformation scale = 2048px / 8192 world units = 0.25
+    
+    // For zoom level where tiles are stored (typically zoom 2):
+    // At that zoom: worldSize * scale * 2^zoom = actualPixelSize
+    // We want: 8192 * scale * 2^2 = 8192  → scale = 0.25
+    
+    // Calculate how many pixels the world should be at zoom 0
+    // Based on: (numTiles * tileSize) / 2^tileZoomLevel
+    const mapExtents = this.getMapExtentsData();
+    const extentData = mapExtents[mapName];
+    
+    let pixelsAtZoom0: number;
+    if (extentData && extentData.tilesWide && extentData.tileSize) {
+      // Calculate based on actual tile grid
+      const tileZoomLevel = 2; // Tiles stored at zoom 2
+      const actualPixelSize = extentData.tilesWide * extentData.tileSize;
+      pixelsAtZoom0 = actualPixelSize / Math.pow(2, tileZoomLevel);
+      console.log(`[${mapName}] Calculated from extent data: ${extentData.tilesWide} tiles × ${extentData.tileSize}px at zoom ${tileZoomLevel} = ${actualPixelSize}px → ${pixelsAtZoom0}px at zoom 0`);
+    } else {
+      // Fallback: assume standard configuration
+      pixelsAtZoom0 = 2048;
+      console.log(`[${mapName}] Using default: ${pixelsAtZoom0}px at zoom 0`);
+    }
 
-    // Calculate transformation parameters (from MetaForge's Ma function)
     const worldMin = { x: worldExtent[0], y: worldExtent[1] };
     const worldMax = { x: worldExtent[2], y: worldExtent[3] };
-    const tileMin = { x: tileExtent[0], y: tileExtent[1] };
-    const tileMax = { x: tileExtent[2], y: tileExtent[3] };
+    const worldWidth = worldMax.x - worldMin.x;
+    const worldHeight = worldMax.y - worldMin.y;
 
-    // scaleX/scaleY: How much to multiply game coords to get pixel coords at zoom 0
-    const scaleX = (tileMax.x - tileMin.x) / (worldMax.x - worldMin.x);
-    const offsetX = tileMin.x - scaleX * worldMin.x;
-    const scaleY = (tileMax.y - tileMin.y) / (worldMax.y - worldMin.y);
-    const offsetY = tileMin.y - scaleY * worldMin.y;
+    // Scale: pixels at zoom 0 per world unit
+    const scaleX = pixelsAtZoom0 / worldWidth;
+    const scaleY = pixelsAtZoom0 / worldHeight;
+    const offsetX = -scaleX * worldMin.x;
+    const offsetY = -scaleY * worldMin.y;
 
-    console.log(`[${mapName}] CRS transformation:`, { scaleX, offsetX, scaleY, offsetY, worldExtent, tileSize: config.tileSize });
+    console.log(`[${mapName}] CRS transformation:`, { 
+      scaleX, offsetX, scaleY, offsetY, 
+      worldExtent, 
+      tileSize: config.tileSize,
+      pixelsAtZoom0,
+      worldWidth,
+      worldHeight
+    });
 
     // Create custom CRS with the transformation
     const customCRS = L.extend({}, L.CRS.Simple, {
@@ -259,6 +295,16 @@ export class MapView {
     });
 
     return customCRS;
+  }
+
+  private getMapExtentsData(): Record<string, any> {
+    // This should ideally load from map-extents.json, but for now hardcode
+    return {
+      'dam': { tilesWide: 16, tilesHigh: 16, tileSize: 512 },
+      'spaceport': { tilesWide: 9, tilesHigh: 6, tileSize: 512 },
+      'buried-city': { tilesWide: 15, tilesHigh: 10, tileSize: 512 },
+      'blue-gate': { tilesWide: 10, tilesHigh: 8, tileSize: 512 }
+    };
   }
 
   private initializeLeafletMap(mapData: { mapName: string; markers: MapMarker[]; isActive: boolean }): void {
@@ -428,10 +474,10 @@ export class MapView {
           </div>
           <div class="alignment-section" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span style="color: #fff; font-weight: bold; font-size: 14px;">Move:</span>
-            <button class="btn-small" data-action="move-up" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">Γåæ 8</button>
-            <button class="btn-small" data-action="move-down" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">Γåô 2</button>
-            <button class="btn-small" data-action="move-left" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">ΓåÉ 4</button>
-            <button class="btn-small" data-action="move-right" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">ΓåÆ 6</button>
+            <button class="btn-small" data-action="move-up" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">↑ 8</button>
+            <button class="btn-small" data-action="move-down" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">↓ 2</button>
+            <button class="btn-small" data-action="move-left" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">← 4</button>
+            <button class="btn-small" data-action="move-right" style="background: #333; color: #fff; border: 2px solid #666; padding: 10px 20px; cursor: pointer; font-size: 16px; font-weight: bold; border-radius: 4px;">→ 6</button>
           </div>
         </div>
         <div class="alignment-values" style="display: flex; flex-direction: column; gap: 10px; padding-top: 15px; border-top: 1px solid #666;">
