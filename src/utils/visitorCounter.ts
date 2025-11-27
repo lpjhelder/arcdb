@@ -1,62 +1,63 @@
 export class VisitorCounter {
   private static readonly STORAGE_KEY = 'arc-raiders-visitor-data';
-  private static readonly API_URL = 'https://api.countapi.xyz/hit/arc-raiders-loot-list/visits';
+  // API Proxy simples e gratuita para contador
+  private static readonly COUNT_API = 'https://api.counterapi.dev/v1/arc-raiders-loot/visitors';
 
   static async initCounter(): Promise<void> {
     const visitorData = this.getVisitorData();
     const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000;
 
     // Marcar como visitante único se for a primeira vez
     if (!visitorData.hasVisited) {
       visitorData.hasVisited = true;
       visitorData.firstVisit = now;
-      visitorData.lastVisit = now;
-      visitorData.visitCount = 1;
       this.saveVisitorData(visitorData);
       
-      // Incrementar contador global
-      await this.incrementGlobalCounter();
+      // Incrementar contador global apenas na primeira visita
+      await this.incrementAndDisplay();
     } else {
-      // Atualizar última visita
-      if (now - visitorData.lastVisit > oneDayMs) {
-        visitorData.visitCount++;
-      }
-      visitorData.lastVisit = now;
-      this.saveVisitorData(visitorData);
+      // Apenas buscar o contador atual
+      await this.fetchAndDisplay();
     }
-
-    // Buscar e exibir total de visitantes
-    this.displayVisitorCount();
+    
+    visitorData.lastVisit = now;
+    this.saveVisitorData(visitorData);
   }
 
-  private static async incrementGlobalCounter(): Promise<void> {
+  private static async incrementAndDisplay(): Promise<void> {
     try {
-      const response = await fetch(this.API_URL);
-      if (!response.ok) throw new Error('Failed to increment counter');
+      const response = await fetch(`${this.COUNT_API}/up`, { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        this.updateCounterDisplay(data.count || 1);
+      } else {
+        this.updateCounterDisplay(1);
+      }
     } catch (error) {
       console.warn('Could not increment visitor counter:', error);
+      this.updateCounterDisplay(1);
     }
   }
 
-  private static async displayVisitorCount(): Promise<void> {
+  private static async fetchAndDisplay(): Promise<void> {
     try {
-      const response = await fetch('https://api.countapi.xyz/get/arc-raiders-loot-list/visits');
-      if (!response.ok) throw new Error('Failed to fetch counter');
-      
-      const data = await response.json();
-      const count = data.value || 0;
-      
-      this.updateCounterDisplay(count);
+      const response = await fetch(this.COUNT_API, { method: 'GET' });
+      if (response.ok) {
+        const data = await response.json();
+        this.updateCounterDisplay(data.count || 1);
+      } else {
+        this.updateCounterDisplay(1);
+      }
     } catch (error) {
       console.warn('Could not fetch visitor count:', error);
+      this.updateCounterDisplay(1);
     }
   }
 
   private static updateCounterDisplay(count: number): void {
     const counterElement = document.querySelector('.visitor-counter');
     if (counterElement) {
-      counterElement.textContent = `👥 ${count.toLocaleString()} visitors`;
+      counterElement.textContent = `👥 ${count.toLocaleString()} ${count === 1 ? 'visitor' : 'visitors'}`;
     }
   }
 
