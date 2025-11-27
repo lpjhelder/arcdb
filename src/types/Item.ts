@@ -21,6 +21,13 @@ export interface ItemEffect {
   value: string | number;
 }
 
+export interface KeepForData {
+  workshop?: number;
+  quest?: number;
+  expedition?: number;
+  scrappy?: number;
+}
+
 export interface Item {
   id: string;
   name: string; // English only (previously multilingual)
@@ -42,6 +49,7 @@ export interface Item {
   updatedAt?: string;
   tip?: string; // English only (previously multilingual)
   _note?: string;
+  keepFor?: KeepForData; // Quantidade necessária para Quests/Workshop/Expedition/Scrappy
 }
 
 export interface ItemWithDecision extends Item {

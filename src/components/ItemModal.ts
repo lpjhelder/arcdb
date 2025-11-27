@@ -176,23 +176,23 @@ export class ItemModal {
           </div>
 
           <div class="item-modal__grid">
-            <div class="item-modal__section">
-              <h3>Propriedades</h3>
-              <dl class="property-list">
-                <dt>Tipo</dt>
-                <dd>${item.type || 'Desconhecido'}</dd>
-                <dt>Valor</dt>
-                <dd>${itemValue} moedas</dd>
-                <dt>Peso</dt>
-                <dd>${itemWeight} kg</dd>
-                <dt>Tamanho da Pilha</dt>
-                <dd>${itemStack}</dd>
-              </dl>
-            </div>
+          <div class="item-modal__section">
+            <h3>Propriedades</h3>
+            <dl class="property-list">
+              <dt>Tipo</dt>
+              <dd>${item.type || 'Desconhecido'}</dd>
+              <dt>Valor</dt>
+              <dd>${itemValue} moedas</dd>
+              <dt>Peso</dt>
+              <dd>${itemWeight} kg</dd>
+              <dt>Tamanho da Pilha</dt>
+              <dd>${itemStack}</dd>
+            </dl>
+          </div>
 
-            ${this.renderRecyclesInto(item)}
+          ${this.renderKeepForInfo(item)}
 
-            ${this.renderCraftingRecipe(item)}
+          ${this.renderRecyclesInto(item)}            ${this.renderCraftingRecipe(item)}
 
             ${includeUsedToCraft ? this.renderUsedToCraft(item) : '<div id="used-to-craft-placeholder" class="modal-loading" style="min-height: 100px;">Carregando receitas...</div>'}
 
@@ -374,6 +374,60 @@ export class ItemModal {
       situational: 'REVISAR'
     };
     return labels[decision] || decision.toUpperCase();
+  }
+
+  private renderKeepForInfo(item: Item): string {
+    if (!item.keepFor) return '';
+
+    const keepForParts: string[] = [];
+
+    if (item.keepFor.workshop) {
+      keepForParts.push(`
+        <div class="keep-for-info__item">
+          <span class="keep-for-info__icon">🔧</span>
+          <span class="keep-for-info__label">Workshop:</span>
+          <span class="keep-for-info__value">${item.keepFor.workshop}x</span>
+        </div>
+      `);
+    }
+    if (item.keepFor.quest) {
+      keepForParts.push(`
+        <div class="keep-for-info__item">
+          <span class="keep-for-info__icon">📋</span>
+          <span class="keep-for-info__label">Quest:</span>
+          <span class="keep-for-info__value">${item.keepFor.quest}x</span>
+        </div>
+      `);
+    }
+    if (item.keepFor.expedition) {
+      keepForParts.push(`
+        <div class="keep-for-info__item">
+          <span class="keep-for-info__icon">🚀</span>
+          <span class="keep-for-info__label">Expedition:</span>
+          <span class="keep-for-info__value">${item.keepFor.expedition}x</span>
+        </div>
+      `);
+    }
+    if (item.keepFor.scrappy) {
+      keepForParts.push(`
+        <div class="keep-for-info__item">
+          <span class="keep-for-info__icon">🐾</span>
+          <span class="keep-for-info__label">Scrappy:</span>
+          <span class="keep-for-info__value">${item.keepFor.scrappy}x</span>
+        </div>
+      `);
+    }
+
+    if (keepForParts.length === 0) return '';
+
+    return `
+      <div class="item-modal__section">
+        <h3>Keep For Quests/Workshop</h3>
+        <div class="keep-for-info">
+          ${keepForParts.join('')}
+        </div>
+      </div>
+    `;
   }
 
   private renderDecisionReasons(decisionData: DecisionReason): string {

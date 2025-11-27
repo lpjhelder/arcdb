@@ -57,9 +57,12 @@ export class ItemCard {
           ${stackSize > 1 ? `<span class="item-card__stack">x${stackSize}</span>` : ''}
         </div>
 
-        <div class="decision-badge decision-badge--${decisionData.decision}">
-          <span class="decision-badge__icon">${this.getDecisionIcon(decisionData.decision)}</span>
-          <span class="decision-badge__text">${this.getDecisionLabel(decisionData.decision)}</span>
+        <div class="item-card__badges-row">
+          <div class="decision-badge decision-badge--${decisionData.decision}">
+            <span class="decision-badge__icon">${this.getDecisionIcon(decisionData.decision)}</span>
+            <span class="decision-badge__text">${this.getDecisionLabel(decisionData.decision)}</span>
+          </div>
+          ${decisionData.decision === 'keep' ? this.renderKeepForBadge(item) : ''}
         </div>
       </div>
     `;
@@ -118,6 +121,29 @@ export class ItemCard {
       situational: 'YOUR CALL'
     };
     return labels[decision] || 'UNKNOWN';
+  }
+
+  private renderKeepForBadge(item: Item): string {
+    if (!item.keepFor) return '';
+
+    const keepForParts: string[] = [];
+
+    if (item.keepFor.workshop) {
+      keepForParts.push(`<span class="keep-for-badge keep-for-badge--workshop" title="Keep for Workshop"><span class="keep-icon">🔧</span><span class="keep-qty">${item.keepFor.workshop}</span></span>`);
+    }
+    if (item.keepFor.quest) {
+      keepForParts.push(`<span class="keep-for-badge keep-for-badge--quest" title="Keep for Quest"><span class="keep-icon">📋</span><span class="keep-qty">${item.keepFor.quest}</span></span>`);
+    }
+    if (item.keepFor.expedition) {
+      keepForParts.push(`<span class="keep-for-badge keep-for-badge--expedition" title="Keep for Expedition"><span class="keep-icon">🚀</span><span class="keep-qty">${item.keepFor.expedition}</span></span>`);
+    }
+    if (item.keepFor.scrappy) {
+      keepForParts.push(`<span class="keep-for-badge keep-for-badge--scrappy" title="Keep for Scrappy"><span class="keep-icon">🐾</span><span class="keep-qty">${item.keepFor.scrappy}</span></span>`);
+    }
+
+    if (keepForParts.length === 0) return '';
+
+    return keepForParts.join('');
   }
 
   destroy(): void {

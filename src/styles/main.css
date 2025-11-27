@@ -1044,6 +1044,13 @@ body {
    Decision Badge
    ======================================== */
 
+.item-card__badges-row {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
 .decision-badge {
   display: flex;
   align-items: center;
@@ -1089,6 +1096,64 @@ body {
   background: rgba(0, 188, 212, 0.15);
   color: #00bcd4;
   border: 1px solid #00bcd4;
+}
+
+/* ========================================
+   Keep For Badges
+   ======================================== */
+
+.keep-for-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: all var(--transition-fast);
+  min-width: 2.5rem;
+}
+
+.keep-for-badge .keep-icon {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.keep-for-badge .keep-qty {
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.keep-for-badge--workshop {
+  background: rgba(156, 39, 176, 0.15);
+  color: #ce93d8;
+  border: 1px solid rgba(156, 39, 176, 0.4);
+}
+
+.keep-for-badge--quest {
+  background: rgba(33, 150, 243, 0.15);
+  color: #64b5f6;
+  border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
+.keep-for-badge--expedition {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ffb74d;
+  border: 1px solid rgba(255, 152, 0, 0.4);
+}
+
+.keep-for-badge--scrappy {
+  background: rgba(76, 175, 80, 0.15);
+  color: #81c784;
+  border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.keep-for-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* ========================================
@@ -1386,6 +1451,41 @@ body {
 .location-list li {
   padding: var(--spacing-xs) 0;
   border-bottom: 1px solid var(--color-bg-elevated);
+}
+
+/* Keep For Info Section */
+.keep-for-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+}
+
+.keep-for-info__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.keep-for-info__icon {
+  font-size: 1.5rem;
+}
+
+.keep-for-info__label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.keep-for-info__value {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-accent-cyan);
 }
 
 /* Recipe Grid */

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  kronon-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kronon-site
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - kronon-network
+
+networks:
+  kronon-network:
+    driver: bridge
