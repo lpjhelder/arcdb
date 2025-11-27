@@ -1665,6 +1665,11 @@ body {
   font-size: 0.75rem;
 }
 
+.visitor-counter {
+  color: var(--color-accent-cyan);
+  font-weight: 600;
+}
+
 /* ========================================
    Utility Classes
    ======================================== */

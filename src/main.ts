@@ -3,6 +3,7 @@ import { dataLoader, type GameData } from './utils/dataLoader';
 import { DecisionEngine } from './utils/decisionEngine';
 import { SearchEngine, type SearchableItem, isCosmetic } from './utils/searchEngine';
 import { StorageManager } from './utils/storage';
+import { VisitorCounter } from './utils/visitorCounter';
 import type { UserProgress } from './types/UserProgress';
 import type { Item, RecycleDecision } from './types/Item';
 import { ItemCard } from './components/ItemCard';
@@ -72,6 +73,9 @@ class App {
 
       // Update last updated time
       this.updateLastUpdated();
+
+      // Initialize visitor counter
+      VisitorCounter.initCounter();
 
       // Hide loading
       this.hideLoading();
